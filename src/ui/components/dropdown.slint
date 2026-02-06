@@ -1,0 +1,288 @@
+// ============================================================================
+// Konami Client - Dropdown Component
+// Premium animated dropdown with glassmorphism
+// ============================================================================
+
+import { Theme, ThemeManager } from "../theme/theme.slint";
+
+export component KonamiDropdown inherits Rectangle {
+    in property <string> placeholder: "Select option";
+    in property <[string]> options;
+    in-out property <int> selected-index: -1;
+    in-out property <bool> is-open: false;
+    in property <bool> disabled: false;
+    
+    callback selection-changed(int, string);
+    
+    property <bool> is-hovered: false;
+    property <duration> anim-duration: 200ms;
+    
+    width: 100%;
+    height: 48px;
+    
+    // Main button
+    Rectangle {
+        width: 100%;
+        height: 48px;
+        border-radius: 12px;
+        background: is-hovered ? Theme.surface-hover : Theme.surface;
+        border-width: 1px;
+        border-color: is-open ? Theme.primary : (is-hovered ? Theme.border-hover : Theme.border);
+        
+        animate background, border-color { duration: anim-duration; easing: ease-out; }
+        
+        HorizontalLayout {
+            padding-left: 16px;
+            padding-right: 16px;
+            spacing: 8px;
+            
+            Text {
+                vertical-alignment: center;
+                text: selected-index >= 0 && selected-index < options.length ? 
+                      options[selected-index] : placeholder;
+                color: selected-index >= 0 ? Theme.text-primary : Theme.text-muted;
+                font-size: 14px;
+            }
+            
+            Rectangle { horizontal-stretch: 1; }
+            
+            // Arrow icon
+            Rectangle {
+                width: 24px;
+                height: 24px;
+                
+                Path {
+                    width: 12px;
+                    height: 12px;
+                    fill: Theme.text-muted;
+                    commands: is-open ? 
+                        "M2 8L6 4L10 8" : 
+                        "M2 4L6 8L10 4";
+                    
+                    animate commands { duration: anim-duration; }
+                }
+            }
+        }
+        
+        TouchArea {
+            enabled: !disabled;
+            mouse-cursor: disabled ? not-allowed : pointer;
+            
+            clicked => {
+                is-open = !is-open;
+            }
+            
+            moved => {
+                is-hovered = true;
+            }
+            
+            pointer-event(event) => {
+                if event.kind == PointerEventKind.move {
+                    is-hovered = self.has-hover;
+                }
+            }
+        }
+    }
+    
+    // Dropdown menu
+    if is-open: Rectangle {
+        y: 52px;
+        width: 100%;
+        height: min(options.length * 44px + 16px, 220px);
+        border-radius: 12px;
+        background: Theme.surface;
+        border-width: 1px;
+        border-color: Theme.border;
+        drop-shadow-blur: 20px;
+        drop-shadow-color: #00000040;
+        drop-shadow-offset-y: 8px;
+        clip: true;
+        
+        animate height, opacity { duration: anim-duration; easing: ease-out; }
+        
+        Flickable {
+            width: 100%;
+            height: 100%;
+            viewport-height: options.length * 44px + 16px;
+            
+            VerticalLayout {
+                padding: 8px;
+                spacing: 4px;
+                
+                for option[index] in options: Rectangle {
+                    height: 40px;
+                    border-radius: 8px;
+                    background: index == selected-index ? Theme.primary.with-alpha(0.15) :
+                               (touch-area.has-hover ? Theme.surface-hover : transparent);
+                    
+                    animate background { duration: 150ms; }
+                    
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        padding-right: 12px;
+                        
+                        Text {
+                            vertical-alignment: center;
+                            text: option;
+                            color: index == selected-index ? Theme.primary : Theme.text-primary;
+                            font-size: 14px;
+                        }
+                        
+                        Rectangle { horizontal-stretch: 1; }
+                        
+                        if index == selected-index: Text {
+                            vertical-alignment: center;
+                            text: "✓";
+                            color: Theme.primary;
+                            font-size: 14px;
+                        }
+                    }
+                    
+                    touch-area := TouchArea {
+                        mouse-cursor: pointer;
+                        
+                        clicked => {
+                            selected-index = index;
+                            is-open = false;
+                            selection-changed(index, option);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Search Dropdown with filtering
+export component KonamiSearchDropdown inherits Rectangle {
+    in property <string> placeholder: "Search...";
+    in property <[string]> options;
+    in-out property <int> selected-index: -1;
+    in-out property <string> search-text: "";
+    in-out property <bool> is-open: false;
+    
+    callback selection-changed(int, string);
+    callback search-changed(string);
+    
+    property <duration> anim-duration: 200ms;
+    
+    width: 100%;
+    height: 48px;
+    
+    Rectangle {
+        width: 100%;
+        height: 48px;
+        border-radius: 12px;
+        background: Theme.surface;
+        border-width: 1px;
+        border-color: is-open ? Theme.primary : Theme.border;
+        
+        HorizontalLayout {
+            padding-left: 16px;
+            padding-right: 16px;
+            spacing: 8px;
+            
+            // Search icon
+            Text {
+                vertical-alignment: center;
+                text: "🔍";
+                font-size: 16px;
+            }
+            
+            TextInput {
+                vertical-alignment: center;
+                horizontal-stretch: 1;
+                text <=> search-text;
+                font-size: 14px;
+                color: Theme.text-primary;
+                
+                accepted => {
+                    is-open = false;
+                }
+                
+                edited => {
+                    is-open = search-text.length > 0;
+                    search-changed(search-text);
+                }
+            }
+            
+            if search-text.length > 0: TouchArea {
+                width: 24px;
+                height: 24px;
+                mouse-cursor: pointer;
+                
+                Rectangle {
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 12px;
+                    background: parent.has-hover ? Theme.surface-hover : transparent;
+                    
+                    Text {
+                        text: "✕";
+                        color: Theme.text-muted;
+                        font-size: 12px;
+                    }
+                }
+                
+                clicked => {
+                    search-text = "";
+                    is-open = false;
+                }
+            }
+        }
+    }
+    
+    if is-open && options.length > 0: Rectangle {
+        y: 52px;
+        width: 100%;
+        height: min(options.length * 44px + 16px, 264px);
+        border-radius: 12px;
+        background: Theme.surface;
+        border-width: 1px;
+        border-color: Theme.border;
+        drop-shadow-blur: 20px;
+        drop-shadow-color: #00000040;
+        drop-shadow-offset-y: 8px;
+        clip: true;
+        
+        Flickable {
+            width: 100%;
+            height: 100%;
+            viewport-height: options.length * 44px + 16px;
+            
+            VerticalLayout {
+                padding: 8px;
+                spacing: 4px;
+                
+                for option[index] in options: Rectangle {
+                    height: 40px;
+                    border-radius: 8px;
+                    background: touch.has-hover ? Theme.surface-hover : transparent;
+                    
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        padding-right: 12px;
+                        
+                        Text {
+                            vertical-alignment: center;
+                            text: option;
+                            color: Theme.text-primary;
+                            font-size: 14px;
+                        }
+                    }
+                    
+                    touch := TouchArea {
+                        mouse-cursor: pointer;
+                        
+                        clicked => {
+                            selected-index = index;
+                            search-text = option;
+                            is-open = false;
+                            selection-changed(index, option);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

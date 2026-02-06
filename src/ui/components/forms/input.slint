@@ -1,0 +1,580 @@
+// ============================================================================
+// KONAMI CLIENT - Premium Form Input Components
+// Fluid animations, validation states, and accessibility
+// ============================================================================
+
+import { Theme, Animation, Spacing, Typography } from "../themes/base.slint";
+
+// Animated text input with floating label
+export component KonamiInput inherits Rectangle {
+    in property <string> placeholder: "";
+    in property <string> label: "";
+    in property <string> helper-text: "";
+    in property <string> error-text: "";
+    in property <bool> has-error: false;
+    in property <bool> disabled: false;
+    in property <bool> password: false;
+    in property <InputType> input-type: InputType.text;
+    in-out property <string> text <=> input.text;
+    
+    callback edited(string);
+    callback accepted(string);
+    callback focus-changed(bool);
+    
+    property <bool> focused: input.has-focus;
+    property <bool> has-content: text != "";
+    property <float> focus-progress: focused ? 1.0 : 0.0;
+    property <float> label-float: (focused || has-content) ? 1.0 : 0.0;
+    property <float> error-progress: has-error ? 1.0 : 0.0;
+    
+    height: label != "" ? 76px : 56px;
+    background: transparent;
+    
+    animate focus-progress { duration: 200ms; easing: ease-out; }
+    animate label-float { duration: 180ms; easing: cubic-bezier(0.4, 0, 0.2, 1); }
+    animate error-progress { duration: 200ms; easing: ease-out; }
+    
+    VerticalLayout {
+        spacing: 6px;
+        
+        // Floating label (if provided)
+        if label != "": Rectangle {
+            height: 20px;
+            background: transparent;
+            
+            Text {
+                x: 0;
+                text: label;
+                font-size: 13px;
+                font-weight: 500;
+                color: has-error ? Theme.current.status.error :
+                       focused ? Theme.current.primary :
+                       Theme.current.text-secondary;
+                
+                animate color { duration: 180ms; }
+            }
+        }
+        
+        // Input container
+        Rectangle {
+            height: 52px;
+            border-radius: 12px;
+            background: disabled ? Theme.current.surface.with-alpha(0.5) :
+                       Theme.current.surface-elevated;
+            border-width: 2px;
+            border-color: has-error ? Theme.current.status.error :
+                         focused ? Theme.current.primary :
+                         Theme.current.border;
+            clip: true;
+            
+            animate background { duration: 180ms; }
+            animate border-color { duration: 200ms; easing: ease-out; }
+            
+            // Focus glow effect
+            Rectangle {
+                x: -4px;
+                y: -4px;
+                width: parent.width + 8px;
+                height: parent.height + 8px;
+                border-radius: parent.border-radius + 4px;
+                background: transparent;
+                border-width: 4px;
+                border-color: (has-error ? Theme.current.status.error : Theme.current.primary)
+                    .with-alpha(focus-progress * 0.15);
+                
+                animate border-color { duration: 200ms; }
+            }
+            
+            HorizontalLayout {
+                padding-left: 16px;
+                padding-right: 16px;
+                alignment: start;
+                
+                // Main input
+                input := TextInput {
+                    horizontal-stretch: 1;
+                    vertical-alignment: center;
+                    font-size: 15px;
+                    color: disabled ? Theme.current.text-tertiary : Theme.current.text-primary;
+                    selection-background-color: Theme.current.primary.with-alpha(0.3);
+                    selection-foreground-color: Theme.current.text-primary;
+                    input-type: password ? InputType.password : root.input-type;
+                    enabled: !disabled;
+                    
+                    edited => {
+                        root.edited(self.text);
+                    }
+                    
+                    accepted => {
+                        root.accepted(self.text);
+                    }
+                }
+                
+                // Placeholder overlay
+                if !has-content && !focused: Text {
+                    text: placeholder;
+                    font-size: 15px;
+                    color: Theme.current.text-tertiary;
+                    vertical-alignment: center;
+                }
+                
+                // Clear button (when has content)
+                if has-content && !disabled: Rectangle {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 8px;
+                    background: transparent;
+                    
+                    property <float> clear-hover: 0;
+                    animate clear-hover { duration: 120ms; }
+                    
+                    Rectangle {
+                        width: 100%;
+                        height: 100%;
+                        border-radius: parent.border-radius;
+                        background: Theme.current.surface.with-alpha(clear-hover);
+                    }
+                    
+                    Text {
+                        text: "\u{2715}";
+                        font-size: 14px;
+                        color: Theme.current.text-tertiary;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                    
+                    clear-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => {
+                            root.text = "";
+                            input.focus();
+                        }
+                    }
+                    
+                    states [
+                        hovered when clear-touch.has-hover: {
+                            clear-hover: 1.0;
+                        }
+                    ]
+                }
+            }
+        }
+        
+        // Helper/Error text
+        if helper-text != "" || has-error: Rectangle {
+            height: 18px;
+            background: transparent;
+            
+            Text {
+                x: 4px;
+                text: has-error ? error-text : helper-text;
+                font-size: 12px;
+                color: has-error ? Theme.current.status.error : Theme.current.text-tertiary;
+                
+                animate color { duration: 180ms; }
+            }
+        }
+    }
+    
+    // Click to focus
+    TouchArea {
+        clicked => {
+            if !disabled {
+                input.focus();
+            }
+        }
+    }
+}
+
+// Search input with icon and suggestions support
+export component KonamiSearchInput inherits Rectangle {
+    in property <string> placeholder: "Search...";
+    in property <bool> loading: false;
+    in-out property <string> text <=> input.text;
+    
+    callback search(string);
+    callback cleared();
+    
+    property <bool> focused: input.has-focus;
+    property <bool> has-content: text != "";
+    property <float> focus-progress: focused ? 1.0 : 0.0;
+    
+    height: 48px;
+    border-radius: 24px;
+    background: Theme.current.surface-elevated;
+    border-width: 2px;
+    border-color: focused ? Theme.current.primary.with-alpha(0.5) : transparent;
+    
+    animate border-color { duration: 200ms; easing: ease-out; }
+    
+    // Glow effect on focus
+    drop-shadow-blur: focused ? 16px : 0px;
+    drop-shadow-color: Theme.current.primary.with-alpha(focus-progress * 0.2);
+    
+    animate drop-shadow-blur { duration: 250ms; }
+    animate drop-shadow-color { duration: 250ms; }
+    
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 12px;
+        spacing: 12px;
+        alignment: center;
+        
+        // Search icon or loading spinner
+        Rectangle {
+            width: 24px;
+            height: 24px;
+            
+            if loading: Rectangle {
+                width: 20px;
+                height: 20px;
+                x: 2px;
+                y: 2px;
+                border-radius: 10px;
+                border-width: 2px;
+                border-color: Theme.current.primary;
+                clip: true;
+                
+                // Spinner arc
+                Rectangle {
+                    width: 50%;
+                    height: 100%;
+                    background: Theme.current.surface-elevated;
+                }
+            }
+            
+            if !loading: Text {
+                text: "\u{1F50D}";
+                font-size: 18px;
+                color: focused ? Theme.current.primary : Theme.current.text-tertiary;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                
+                animate color { duration: 180ms; }
+            }
+        }
+        
+        // Input field
+        input := TextInput {
+            horizontal-stretch: 1;
+            vertical-alignment: center;
+            font-size: 15px;
+            color: Theme.current.text-primary;
+            selection-background-color: Theme.current.primary.with-alpha(0.3);
+            
+            accepted => {
+                root.search(self.text);
+            }
+        }
+        
+        // Placeholder
+        if !has-content && !focused: Text {
+            text: placeholder;
+            font-size: 15px;
+            color: Theme.current.text-tertiary;
+            vertical-alignment: center;
+            horizontal-stretch: 1;
+        }
+        
+        // Clear/Search button
+        if has-content: Rectangle {
+            width: 36px;
+            height: 36px;
+            border-radius: 18px;
+            background: Theme.current.primary;
+            
+            property <float> btn-scale: 1.0;
+            animate btn-scale { duration: 100ms; }
+            
+            Text {
+                text: "\u{2192}"; // Arrow
+                font-size: 18px;
+                color: #ffffff;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+            
+            TouchArea {
+                mouse-cursor: pointer;
+                
+                clicked => {
+                    root.search(input.text);
+                }
+                
+                pointer-event(e) => {
+                    if e.kind == PointerEventKind.down {
+                        btn-scale = 0.9;
+                    } else {
+                        btn-scale = 1.0;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Click to focus
+    TouchArea {
+        clicked => {
+            input.focus();
+        }
+    }
+}
+
+// Textarea with auto-resize
+export component KonamiTextarea inherits Rectangle {
+    in property <string> placeholder: "";
+    in property <string> label: "";
+    in property <int> min-lines: 3;
+    in property <int> max-lines: 10;
+    in property <bool> disabled: false;
+    in-out property <string> text <=> input.text;
+    
+    callback edited(string);
+    
+    property <bool> focused: input.has-focus;
+    property <float> focus-progress: focused ? 1.0 : 0.0;
+    
+    min-height: label != "" ? (min-lines * 24px + 80px) : (min-lines * 24px + 56px);
+    background: transparent;
+    
+    animate focus-progress { duration: 200ms; easing: ease-out; }
+    
+    VerticalLayout {
+        spacing: 6px;
+        
+        if label != "": Text {
+            text: label;
+            font-size: 13px;
+            font-weight: 500;
+            color: focused ? Theme.current.primary : Theme.current.text-secondary;
+            
+            animate color { duration: 180ms; }
+        }
+        
+        Rectangle {
+            vertical-stretch: 1;
+            border-radius: 12px;
+            background: disabled ? Theme.current.surface.with-alpha(0.5) :
+                       Theme.current.surface-elevated;
+            border-width: 2px;
+            border-color: focused ? Theme.current.primary : Theme.current.border;
+            
+            animate border-color { duration: 200ms; }
+            
+            Flickable {
+                x: 16px;
+                y: 14px;
+                width: parent.width - 32px;
+                height: parent.height - 28px;
+                viewport-height: input.preferred-height;
+                
+                input := TextInput {
+                    width: parent.width;
+                    wrap: word-wrap;
+                    font-size: 14px;
+                    color: disabled ? Theme.current.text-tertiary : Theme.current.text-primary;
+                    selection-background-color: Theme.current.primary.with-alpha(0.3);
+                    enabled: !disabled;
+                    
+                    edited => {
+                        root.edited(self.text);
+                    }
+                }
+            }
+            
+            // Placeholder
+            if text == "" && !focused: Text {
+                x: 16px;
+                y: 14px;
+                text: placeholder;
+                font-size: 14px;
+                color: Theme.current.text-tertiary;
+            }
+        }
+    }
+    
+    TouchArea {
+        clicked => {
+            if !disabled {
+                input.focus();
+            }
+        }
+    }
+}
+
+// Select/Dropdown component
+export component KonamiSelect inherits Rectangle {
+    in property <string> label: "";
+    in property <string> placeholder: "Select...";
+    in property <[string]> options: [];
+    in property <int> selected-index: -1;
+    in property <bool> disabled: false;
+    
+    callback selected(int, string);
+    
+    property <bool> open: false;
+    property <float> open-progress: open ? 1.0 : 0.0;
+    property <string> display-text: selected-index >= 0 && selected-index < options.length ? 
+                                    options[selected-index] : placeholder;
+    
+    height: label != "" ? 76px : 56px;
+    background: transparent;
+    
+    animate open-progress { duration: 250ms; easing: cubic-bezier(0.4, 0, 0.2, 1); }
+    
+    VerticalLayout {
+        spacing: 6px;
+        
+        if label != "": Text {
+            text: label;
+            font-size: 13px;
+            font-weight: 500;
+            color: open ? Theme.current.primary : Theme.current.text-secondary;
+            
+            animate color { duration: 180ms; }
+        }
+        
+        // Select button
+        Rectangle {
+            height: 52px;
+            border-radius: 12px;
+            background: disabled ? Theme.current.surface.with-alpha(0.5) :
+                       Theme.current.surface-elevated;
+            border-width: 2px;
+            border-color: open ? Theme.current.primary : Theme.current.border;
+            
+            animate border-color { duration: 200ms; }
+            
+            HorizontalLayout {
+                padding-left: 16px;
+                padding-right: 12px;
+                alignment: space-between;
+                
+                Text {
+                    text: display-text;
+                    font-size: 15px;
+                    color: selected-index >= 0 ? Theme.current.text-primary : Theme.current.text-tertiary;
+                    vertical-alignment: center;
+                    horizontal-stretch: 1;
+                }
+                
+                // Chevron icon
+                Rectangle {
+                    width: 32px;
+                    height: 32px;
+                    
+                    Text {
+                        text: open ? "\u{25B2}" : "\u{25BC}";
+                        font-size: 12px;
+                        color: Theme.current.text-secondary;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                        
+                        animate text { duration: 0ms; }
+                    }
+                }
+            }
+            
+            TouchArea {
+                mouse-cursor: pointer;
+                enabled: !disabled;
+                
+                clicked => {
+                    open = !open;
+                }
+            }
+        }
+    }
+    
+    // Dropdown menu (positioned below)
+    if open: Rectangle {
+        y: label != "" ? 82px : 58px;
+        width: 100%;
+        height: min(options.length * 44px + 8px, 220px);
+        border-radius: 12px;
+        background: Theme.current.surface-elevated;
+        border-width: 1px;
+        border-color: Theme.current.border;
+        clip: true;
+        
+        drop-shadow-blur: 20px;
+        drop-shadow-color: #000000.with-alpha(0.15);
+        drop-shadow-offset-y: 8px;
+        
+        Flickable {
+            x: 4px;
+            y: 4px;
+            width: parent.width - 8px;
+            height: parent.height - 8px;
+            viewport-height: options.length * 44px;
+            
+            VerticalLayout {
+                for option[index] in options: Rectangle {
+                    height: 44px;
+                    border-radius: 8px;
+                    background: transparent;
+                    
+                    property <float> item-hover: 0;
+                    animate item-hover { duration: 120ms; }
+                    
+                    Rectangle {
+                        width: 100%;
+                        height: 100%;
+                        border-radius: parent.border-radius;
+                        background: index == selected-index ? 
+                            Theme.current.primary.with-alpha(0.15) :
+                            Theme.current.surface.with-alpha(item-hover * 0.5);
+                    }
+                    
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        padding-right: 12px;
+                        
+                        Text {
+                            text: option;
+                            font-size: 14px;
+                            font-weight: index == selected-index ? 600 : 400;
+                            color: index == selected-index ? 
+                                Theme.current.primary : Theme.current.text-primary;
+                            vertical-alignment: center;
+                            horizontal-stretch: 1;
+                        }
+                        
+                        if index == selected-index: Text {
+                            text: "\u{2713}";
+                            font-size: 14px;
+                            color: Theme.current.primary;
+                            vertical-alignment: center;
+                        }
+                    }
+                    
+                    item-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        
+                        clicked => {
+                            root.selected(index, option);
+                            root.open = false;
+                        }
+                    }
+                    
+                    states [
+                        hovered when item-touch.has-hover: {
+                            item-hover: 1.0;
+                        }
+                    ]
+                }
+            }
+        }
+    }
+    
+    // Close when clicking outside
+    if open: PopupWindow {
+        x: 0;
+        y: 0;
+        width: 0;
+        height: 0;
+        close-on-click: true;
+        
+        Rectangle {}
+    }
+}

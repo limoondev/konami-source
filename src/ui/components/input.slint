@@ -1,0 +1,493 @@
+// Konami Client - Input Components
+import { ThemeManager } from "../theme/theme.slint";
+
+// Text Input Component
+export component TextInput inherits Rectangle {
+    in property <string> placeholder: "";
+    in property <string> label: "";
+    in property <string> error: "";
+    in property <bool> password: false;
+    in property <bool> disabled: false;
+    in-out property <string> text: "";
+    
+    callback accepted(string);
+    callback edited(string);
+    
+    property <bool> focused: input.has-focus;
+    property <bool> has-error: error != "";
+    
+    height: label != "" ? 72px : 48px;
+    
+    VerticalLayout {
+        spacing: 6px;
+        
+        if label != "": Text {
+            text: root.label;
+            color: ThemeManager.colors.foreground-muted;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        input-container := Rectangle {
+            height: 44px;
+            border-radius: ThemeManager.radius.md;
+            background: ThemeManager.colors.surface;
+            border-width: focused ? 2px : 1px;
+            border-color: has-error ? ThemeManager.colors.error :
+                         focused ? ThemeManager.colors.primary :
+                         ThemeManager.colors.border;
+            
+            animate border-color { duration: ThemeManager.animation.duration-fast; }
+            animate border-width { duration: ThemeManager.animation.duration-fast; }
+            
+            // Glow effect when focused
+            drop-shadow-color: focused && !has-error ? ThemeManager.colors.glow : transparent;
+            drop-shadow-blur: 8px;
+            
+            HorizontalLayout {
+                padding-left: 12px;
+                padding-right: 12px;
+                
+                input := TextInput {
+                    text <=> root.text;
+                    input-type: password ? InputType.password : InputType.text;
+                    enabled: !disabled;
+                    font-size: 14px;
+                    color: ThemeManager.colors.foreground;
+                    selection-foreground-color: ThemeManager.colors.primary-foreground;
+                    selection-background-color: ThemeManager.colors.primary;
+                    
+                    accepted => {
+                        root.accepted(self.text);
+                    }
+                    
+                    edited => {
+                        root.edited(self.text);
+                    }
+                }
+            }
+            
+            // Placeholder
+            if text == "" && !focused: Text {
+                x: 12px;
+                text: placeholder;
+                color: ThemeManager.colors.foreground-subtle;
+                font-size: 14px;
+                vertical-alignment: center;
+            }
+        }
+        
+        if has-error: Text {
+            text: error;
+            color: ThemeManager.colors.error;
+            font-size: 12px;
+        }
+    }
+}
+
+// Search Input with Icon
+export component SearchInput inherits Rectangle {
+    in property <string> placeholder: "Search...";
+    in property <bool> disabled: false;
+    in-out property <string> text: "";
+    
+    callback search(string);
+    callback edited(string);
+    
+    property <bool> focused: input.has-focus;
+    
+    height: 44px;
+    border-radius: ThemeManager.radius.lg;
+    background: ThemeManager.colors.surface;
+    border-width: focused ? 2px : 1px;
+    border-color: focused ? ThemeManager.colors.primary : ThemeManager.colors.border;
+    
+    animate border-color { duration: ThemeManager.animation.duration-fast; }
+    
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        spacing: 8px;
+        
+        // Search icon
+        Rectangle {
+            width: 20px;
+            height: 20px;
+            
+            Path {
+                width: 100%;
+                height: 100%;
+                stroke: ThemeManager.colors.foreground-muted;
+                stroke-width: 2px;
+                fill: transparent;
+                commands: "M 9 9 m -7 0 a 7 7 0 1 0 14 0 a 7 7 0 1 0 -14 0 M 14 14 L 20 20";
+            }
+        }
+        
+        input := TextInput {
+            text <=> root.text;
+            enabled: !disabled;
+            font-size: 14px;
+            color: ThemeManager.colors.foreground;
+            
+            accepted => {
+                root.search(self.text);
+            }
+            
+            edited => {
+                root.edited(self.text);
+            }
+        }
+        
+        // Clear button
+        if text != "": Rectangle {
+            width: 20px;
+            height: 20px;
+            border-radius: 10px;
+            background: touch.has-hover ? ThemeManager.colors.surface-hover : transparent;
+            
+            touch := TouchArea {
+                clicked => {
+                    root.text = "";
+                }
+            }
+            
+            Text {
+                text: "×";
+                color: ThemeManager.colors.foreground-muted;
+                font-size: 16px;
+            }
+        }
+    }
+    
+    // Placeholder
+    if text == "" && !focused: Text {
+        x: 44px;
+        text: placeholder;
+        color: ThemeManager.colors.foreground-subtle;
+        font-size: 14px;
+        vertical-alignment: center;
+    }
+}
+
+// Dropdown Select Component
+export component Select inherits Rectangle {
+    in property <string> label: "";
+    in property <[string]> options: [];
+    in property <string> placeholder: "Select...";
+    in-out property <int> selected-index: -1;
+    in property <bool> disabled: false;
+    
+    callback changed(int, string);
+    
+    property <bool> open: false;
+    property <string> display-text: selected-index >= 0 && selected-index < options.length ? 
+        options[selected-index] : placeholder;
+    
+    height: label != "" ? (open ? 72px + options.length * 36px : 72px) : 
+            (open ? 48px + options.length * 36px : 48px);
+    clip: true;
+    
+    animate height { duration: ThemeManager.animation.duration-normal; }
+    
+    VerticalLayout {
+        spacing: 6px;
+        
+        if label != "": Text {
+            text: root.label;
+            color: ThemeManager.colors.foreground-muted;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        // Selected value display
+        trigger := Rectangle {
+            height: 44px;
+            border-radius: ThemeManager.radius.md;
+            background: ThemeManager.colors.surface;
+            border-width: open ? 2px : 1px;
+            border-color: open ? ThemeManager.colors.primary : ThemeManager.colors.border;
+            
+            animate border-color { duration: ThemeManager.animation.duration-fast; }
+            
+            TouchArea {
+                enabled: !disabled;
+                clicked => { open = !open; }
+            }
+            
+            HorizontalLayout {
+                padding-left: 12px;
+                padding-right: 12px;
+                
+                Text {
+                    text: display-text;
+                    color: selected-index < 0 ? ThemeManager.colors.foreground-subtle : 
+                           ThemeManager.colors.foreground;
+                    font-size: 14px;
+                    vertical-alignment: center;
+                    horizontal-stretch: 1;
+                }
+                
+                // Chevron
+                Rectangle {
+                    width: 20px;
+                    height: 20px;
+                    
+                    Path {
+                        width: 100%;
+                        height: 100%;
+                        stroke: ThemeManager.colors.foreground-muted;
+                        stroke-width: 2px;
+                        fill: transparent;
+                        commands: open ? "M 5 12 L 10 7 L 15 12" : "M 5 8 L 10 13 L 15 8";
+                    }
+                }
+            }
+        }
+        
+        // Dropdown options
+        if open: Rectangle {
+            background: ThemeManager.colors.surface;
+            border-radius: ThemeManager.radius.md;
+            border-width: 1px;
+            border-color: ThemeManager.colors.border;
+            
+            VerticalLayout {
+                for option[index] in options: Rectangle {
+                    height: 36px;
+                    background: option-touch.has-hover ? ThemeManager.colors.surface-hover :
+                               index == selected-index ? ThemeManager.colors.surface-active : transparent;
+                    
+                    option-touch := TouchArea {
+                        clicked => {
+                            selected-index = index;
+                            open = false;
+                            root.changed(index, option);
+                        }
+                    }
+                    
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        padding-right: 12px;
+                        
+                        Text {
+                            text: option;
+                            color: ThemeManager.colors.foreground;
+                            font-size: 14px;
+                            vertical-alignment: center;
+                        }
+                        
+                        if index == selected-index: Rectangle {
+                            width: 16px;
+                            height: 16px;
+                            
+                            Path {
+                                width: 100%;
+                                height: 100%;
+                                stroke: ThemeManager.colors.primary;
+                                stroke-width: 2px;
+                                fill: transparent;
+                                commands: "M 3 8 L 7 12 L 13 4";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Slider Component
+export component Slider inherits Rectangle {
+    in property <string> label: "";
+    in property <float> minimum: 0;
+    in property <float> maximum: 100;
+    in property <float> step: 1;
+    in property <string> suffix: "";
+    in property <bool> disabled: false;
+    in-out property <float> value: 50;
+    
+    callback changed(float);
+    
+    property <float> ratio: (value - minimum) / (maximum - minimum);
+    property <length> track-width: track.width;
+    
+    height: label != "" ? 52px : 32px;
+    
+    VerticalLayout {
+        spacing: 8px;
+        
+        if label != "": HorizontalLayout {
+            Text {
+                text: root.label;
+                color: ThemeManager.colors.foreground-muted;
+                font-size: 12px;
+                font-weight: 500;
+                horizontal-stretch: 1;
+            }
+            
+            Text {
+                text: round(value) + suffix;
+                color: ThemeManager.colors.foreground;
+                font-size: 12px;
+                font-weight: 600;
+            }
+        }
+        
+        track := Rectangle {
+            height: 8px;
+            border-radius: 4px;
+            background: ThemeManager.colors.surface;
+            
+            // Filled portion
+            Rectangle {
+                width: ratio * parent.width;
+                height: 100%;
+                border-radius: 4px;
+                background: ThemeManager.colors.primary;
+            }
+            
+            // Thumb
+            thumb := Rectangle {
+                x: ratio * (parent.width - self.width);
+                y: -4px;
+                width: 16px;
+                height: 16px;
+                border-radius: 8px;
+                background: ThemeManager.colors.primary;
+                border-width: 2px;
+                border-color: ThemeManager.colors.background;
+                
+                drop-shadow-color: ThemeManager.colors.shadow;
+                drop-shadow-blur: 4px;
+            }
+            
+            TouchArea {
+                enabled: !disabled;
+                
+                moved => {
+                    if self.pressed {
+                        value = clamp(minimum + (self.mouse-x / track-width) * (maximum - minimum), 
+                                     minimum, maximum);
+                        value = round(value / step) * step;
+                        root.changed(value);
+                    }
+                }
+                
+                pointer-event(event) => {
+                    if event.kind == PointerEventKind.down {
+                        value = clamp(minimum + (self.mouse-x / track-width) * (maximum - minimum), 
+                                     minimum, maximum);
+                        value = round(value / step) * step;
+                        root.changed(value);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Toggle Switch Component
+export component Toggle inherits Rectangle {
+    in property <string> label: "";
+    in property <bool> disabled: false;
+    in-out property <bool> checked: false;
+    
+    callback toggled(bool);
+    
+    height: 24px;
+    
+    HorizontalLayout {
+        spacing: 12px;
+        
+        track := Rectangle {
+            width: 48px;
+            height: 24px;
+            border-radius: 12px;
+            background: checked ? ThemeManager.colors.primary : ThemeManager.colors.surface;
+            border-width: checked ? 0px : 1px;
+            border-color: ThemeManager.colors.border;
+            
+            animate background { duration: ThemeManager.animation.duration-fast; }
+            
+            // Thumb
+            Rectangle {
+                x: checked ? parent.width - self.width - 2px : 2px;
+                y: 2px;
+                width: 20px;
+                height: 20px;
+                border-radius: 10px;
+                background: ThemeManager.colors.foreground;
+                
+                animate x { duration: ThemeManager.animation.duration-fast; }
+            }
+            
+            TouchArea {
+                enabled: !disabled;
+                clicked => {
+                    checked = !checked;
+                    root.toggled(checked);
+                }
+            }
+        }
+        
+        if label != "": Text {
+            text: root.label;
+            color: ThemeManager.colors.foreground;
+            font-size: 14px;
+            vertical-alignment: center;
+        }
+    }
+}
+
+// Checkbox Component
+export component Checkbox inherits Rectangle {
+    in property <string> label: "";
+    in property <bool> disabled: false;
+    in-out property <bool> checked: false;
+    
+    callback toggled(bool);
+    
+    height: 24px;
+    
+    HorizontalLayout {
+        spacing: 10px;
+        
+        box := Rectangle {
+            width: 20px;
+            height: 20px;
+            border-radius: ThemeManager.radius.sm;
+            background: checked ? ThemeManager.colors.primary : transparent;
+            border-width: checked ? 0px : 2px;
+            border-color: ThemeManager.colors.border;
+            
+            animate background { duration: ThemeManager.animation.duration-fast; }
+            animate border-width { duration: ThemeManager.animation.duration-fast; }
+            
+            // Checkmark
+            if checked: Path {
+                width: 12px;
+                height: 12px;
+                stroke: ThemeManager.colors.primary-foreground;
+                stroke-width: 2px;
+                fill: transparent;
+                commands: "M 2 6 L 5 10 L 10 3";
+            }
+            
+            TouchArea {
+                enabled: !disabled;
+                clicked => {
+                    checked = !checked;
+                    root.toggled(checked);
+                }
+            }
+        }
+        
+        if label != "": Text {
+            text: root.label;
+            color: ThemeManager.colors.foreground;
+            font-size: 14px;
+            vertical-alignment: center;
+        }
+    }
+}

@@ -1,0 +1,267 @@
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║                   KONAMI CLIENT - SEARCH COMPONENT               ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+import { Theme } from "../themes/base.slint";
+
+export component SearchBar inherits Rectangle {
+    in property <string> placeholder: "Search...";
+    in-out property <string> value: "";
+    in property <bool> loading: false;
+    in property <bool> has-clear: value != "";
+    in property <length> bar-width: 320px;
+    
+    callback search(string);
+    callback cleared();
+    callback text-changed(string);
+    
+    width: bar-width;
+    height: 44px;
+    border-radius: 12px;
+    background: input-area.has-focus ? Theme.colors.surface-active : 
+                touch.has-hover ? Theme.colors.surface-hover : Theme.surface;
+    border-width: input-area.has-focus ? 2px : 1px;
+    border-color: input-area.has-focus ? Theme.primary : Theme.border;
+    
+    animate background { duration: 150ms; }
+    animate border-color { duration: 150ms; }
+    animate border-width { duration: 100ms; }
+    
+    touch := TouchArea {
+        mouse-cursor: text;
+    }
+    
+    HorizontalLayout {
+        padding-left: 14px;
+        padding-right: 10px;
+        spacing: 10px;
+        
+        // Search icon
+        Rectangle {
+            width: 20px;
+            
+            Text {
+                text: "\u{f002}";
+                font-size: 14px;
+                color: input-area.has-focus ? Theme.primary : Theme.text-subtle;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                
+                animate color { duration: 150ms; }
+            }
+        }
+        
+        // Input
+        input-area := TextInput {
+            horizontal-stretch: 1;
+            text: value;
+            font-size: 14px;
+            color: Theme.text;
+            
+            accepted => {
+                search(self.text);
+            }
+            
+            edited => {
+                value = self.text;
+                text-changed(self.text);
+            }
+        }
+        
+        // Loading spinner
+        if loading: Rectangle {
+            width: 20px;
+            height: 20px;
+            border-radius: 10px;
+            border-width: 2px;
+            border-color: Theme.primary;
+            background: transparent;
+        }
+        
+        // Clear button
+        if has-clear && !loading: Rectangle {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: clear-hover.has-hover ? Theme.colors.surface-active : transparent;
+            
+            clear-hover := TouchArea {
+                mouse-cursor: pointer;
+                clicked => {
+                    value = "";
+                    cleared();
+                }
+            }
+            
+            Text {
+                text: "\u{f00d}";
+                font-size: 11px;
+                color: Theme.text-subtle;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+            
+            animate background { duration: 100ms; }
+        }
+    }
+}
+
+// Command palette / spotlight search
+export component CommandPalette inherits Rectangle {
+    in property <bool> visible: false;
+    in-out property <string> query: "";
+    in property <[string]> results: [];
+    in property <[string]> result-icons: [];
+    in property <int> selected-index: 0;
+    
+    callback search(string);
+    callback select(int);
+    callback close();
+    
+    opacity: visible ? 1 : 0;
+    background: Theme.colors.backdrop;
+    
+    animate opacity { duration: 150ms; }
+    
+    TouchArea {
+        clicked => { close(); }
+    }
+    
+    Rectangle {
+        x: (parent.width - self.width) / 2;
+        y: visible ? parent.height * 0.2 : parent.height * 0.15;
+        width: min(560px, parent.width - 60px);
+        height: min(400px, parent.height * 0.5);
+        border-radius: Theme.radius.xl;
+        background: Theme.surface;
+        border-width: 1px;
+        border-color: Theme.border;
+        
+        animate y { duration: 250ms; easing: cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        TouchArea {}
+        
+        VerticalLayout {
+            // Search input
+            Rectangle {
+                height: 56px;
+                border-width: 0 0 1px 0;
+                border-color: Theme.border;
+                
+                HorizontalLayout {
+                    padding-left: 20px;
+                    padding-right: 20px;
+                    spacing: 12px;
+                    
+                    Text {
+                        text: "\u{f002}";
+                        font-size: 18px;
+                        color: Theme.text-muted;
+                        vertical-alignment: center;
+                    }
+                    
+                    TextInput {
+                        horizontal-stretch: 1;
+                        text: query;
+                        font-size: 16px;
+                        color: Theme.text;
+                        
+                        edited => {
+                            query = self.text;
+                            search(self.text);
+                        }
+                    }
+                    
+                    // Shortcut hint
+                    Rectangle {
+                        width: 32px;
+                        height: 24px;
+                        border-radius: 6px;
+                        background: Theme.colors.surface-hover;
+                        
+                        Text {
+                            text: "Esc";
+                            font-size: 11px;
+                            font-weight: 500;
+                            color: Theme.text-subtle;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+            
+            // Results
+            Rectangle {
+                vertical-stretch: 1;
+                clip: true;
+                
+                VerticalLayout {
+                    padding: 8px;
+                    spacing: 2px;
+                    
+                    for result[idx] in results: Rectangle {
+                        height: 44px;
+                        border-radius: 10px;
+                        background: idx == selected-index ? Theme.primary.with-alpha(0.12) :
+                                    result-hover.has-hover ? Theme.colors.surface-hover : transparent;
+                        
+                        result-hover := TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { select(idx); }
+                        }
+                        
+                        HorizontalLayout {
+                            padding-left: 14px;
+                            padding-right: 14px;
+                            spacing: 12px;
+                            
+                            Text {
+                                text: idx < result-icons.length ? result-icons[idx] : "\u{f15b}";
+                                font-size: 16px;
+                                color: idx == selected-index ? Theme.primary : Theme.text-muted;
+                                vertical-alignment: center;
+                            }
+                            
+                            Text {
+                                text: result;
+                                font-size: 14px;
+                                font-weight: idx == selected-index ? 500 : 400;
+                                color: Theme.text;
+                                vertical-alignment: center;
+                                horizontal-stretch: 1;
+                                overflow: elide;
+                            }
+                        }
+                        
+                        animate background { duration: 100ms; }
+                    }
+                    
+                    // Empty state
+                    if results.length == 0 && query != "": Rectangle {
+                        height: 80px;
+                        
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 4px;
+                            
+                            Text {
+                                text: "No results found";
+                                font-size: 14px;
+                                font-weight: 500;
+                                color: Theme.text-muted;
+                                horizontal-alignment: center;
+                            }
+                            Text {
+                                text: "Try a different search term";
+                                font-size: 12px;
+                                color: Theme.text-subtle;
+                                horizontal-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

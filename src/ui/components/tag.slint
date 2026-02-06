@@ -1,0 +1,215 @@
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║                   KONAMI CLIENT - TAG & BADGE COMPONENTS         ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+import { Theme } from "../themes/base.slint";
+
+// ═══════════════════════════════════════════════════════════════════
+// TAG - Keyword/category label
+// ═══════════════════════════════════════════════════════════════════
+export component Tag inherits Rectangle {
+    in property <string> text;
+    in property <string> variant: "default"; // default, primary, success, warning, error
+    in property <bool> removable: false;
+    in property <bool> interactive: false;
+    
+    callback clicked();
+    callback removed();
+    
+    property <color> tag-bg:
+        variant == "primary" ? Theme.primary.with-alpha(0.12) :
+        variant == "success" ? Theme.success.with-alpha(0.12) :
+        variant == "warning" ? Theme.warning.with-alpha(0.12) :
+        variant == "error"   ? Theme.error.with-alpha(0.12) :
+        Theme.colors.surface-hover;
+    
+    property <color> tag-text:
+        variant == "primary" ? Theme.primary :
+        variant == "success" ? Theme.success :
+        variant == "warning" ? Theme.warning :
+        variant == "error"   ? Theme.error :
+        Theme.text-muted;
+    
+    height: 26px;
+    width: tag-layout.preferred-width + 20px;
+    border-radius: 8px;
+    background: tag-bg;
+    
+    if interactive: TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+    
+    tag-layout := HorizontalLayout {
+        padding-left: 10px;
+        padding-right: removable ? 6px : 10px;
+        spacing: 6px;
+        alignment: center;
+        
+        Text {
+            text: root.text;
+            font-size: 12px;
+            font-weight: 500;
+            color: tag-text;
+            vertical-alignment: center;
+        }
+        
+        if removable: Rectangle {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            background: remove-touch.has-hover ? tag-text.with-alpha(0.15) : transparent;
+            
+            remove-touch := TouchArea {
+                mouse-cursor: pointer;
+                clicked => { removed(); }
+            }
+            
+            Text {
+                text: "\u{f00d}";
+                font-size: 8px;
+                color: tag-text;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// BADGE - Notification count indicator
+// ═══════════════════════════════════════════════════════════════════
+export component Badge inherits Rectangle {
+    in property <int> count: 0;
+    in property <string> variant: "primary"; // primary, error, warning, success
+    in property <bool> show-zero: false;
+    in property <bool> dot-only: false;
+    
+    property <bool> should-show: count > 0 || show-zero;
+    property <string> display: count > 99 ? "99+" : count + "";
+    
+    property <color> badge-color:
+        variant == "error"   ? Theme.error :
+        variant == "warning" ? Theme.warning :
+        variant == "success" ? Theme.success :
+        Theme.primary;
+    
+    visible: should-show;
+    
+    width: dot-only ? 10px : max(22px, badge-text.preferred-width + 12px);
+    height: dot-only ? 10px : 22px;
+    border-radius: dot-only ? 5px : 11px;
+    background: badge-color;
+    
+    if !dot-only: badge-text := Text {
+        text: display;
+        font-size: 11px;
+        font-weight: 700;
+        color: white;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// STATUS TAG - Online/offline/busy
+// ═══════════════════════════════════════════════════════════════════
+export component StatusTag inherits Rectangle {
+    in property <string> status: "online"; // online, away, busy, offline
+    in property <bool> show-text: true;
+    
+    property <string> status-text:
+        status == "online" ? "Online" :
+        status == "away" ? "Away" :
+        status == "busy" ? "Do Not Disturb" :
+        "Offline";
+    
+    property <color> status-color:
+        status == "online" ? Theme.success :
+        status == "away" ? Theme.warning :
+        status == "busy" ? Theme.error :
+        Theme.colors.text-disabled;
+    
+    height: 24px;
+    width: status-layout.preferred-width + 16px;
+    border-radius: 12px;
+    background: status-color.with-alpha(0.12);
+    
+    status-layout := HorizontalLayout {
+        padding-left: 8px;
+        padding-right: 8px;
+        spacing: 6px;
+        alignment: center;
+        
+        Rectangle {
+            width: 8px;
+            height: 8px;
+            border-radius: 4px;
+            background: status-color;
+        }
+        
+        if show-text: Text {
+            text: status-text;
+            font-size: 11px;
+            font-weight: 500;
+            color: status-color;
+            vertical-alignment: center;
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// VERSION TAG - Minecraft version indicator
+// ═══════════════════════════════════════════════════════════════════
+export component VersionTag inherits Rectangle {
+    in property <string> version;
+    in property <string> loader: ""; // fabric, forge, quilt, neoforge
+    
+    property <color> loader-color:
+        loader == "fabric" ? #dbd0b4 :
+        loader == "forge" ? #2c3e7b :
+        loader == "quilt" ? #c796ed :
+        loader == "neoforge" ? #d25928 :
+        Theme.text-subtle;
+    
+    height: 26px;
+    width: ver-layout.preferred-width + 16px;
+    border-radius: 8px;
+    background: Theme.colors.surface-hover;
+    border-width: 1px;
+    border-color: Theme.border;
+    
+    ver-layout := HorizontalLayout {
+        padding-left: 8px;
+        padding-right: 8px;
+        spacing: 6px;
+        alignment: center;
+        
+        if loader != "": Rectangle {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            background: loader-color;
+            
+            Text {
+                text: loader == "fabric" ? "F" :
+                      loader == "forge" ? "F" :
+                      loader == "quilt" ? "Q" :
+                      loader == "neoforge" ? "N" : "?";
+                font-size: 9px;
+                font-weight: 700;
+                color: white;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+        
+        Text {
+            text: version;
+            font-size: 12px;
+            font-weight: 500;
+            color: Theme.text;
+            vertical-alignment: center;
+        }
+    }
+}

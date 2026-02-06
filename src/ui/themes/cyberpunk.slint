@@ -1,0 +1,150 @@
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║                      KONAMI CLIENT - CYBERPUNK NEON THEME                    ║
+// ║                                                                               ║
+// ║  Inspired by Cyberpunk 2077, Blade Runner, and neon-drenched cityscapes.    ║
+// ║  Features electric cyan, hot magenta, and digital yellow accents.           ║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
+
+import { ColorPalette, Theme } from "base.slint";
+
+export global CyberpunkTheme {
+    // Theme metadata
+    out property <string> id: "cyberpunk";
+    out property <string> name: "Cyberpunk Neon";
+    out property <string> description: "Futuristic neon aesthetic with electric colors";
+    out property <bool> is-dark: true;
+    
+    // Complete color palette
+    out property <ColorPalette> colors: {
+        // ─────────────────────────────────────────────────────────────────────
+        // Brand Colors - Electric Neon Palette
+        // ─────────────────────────────────────────────────────────────────────
+        primary: #00f5ff,              // Electric Cyan
+        primary-hover: #33f7ff,
+        primary-active: #00c4cc,
+        primary-disabled: #00f5ff40,
+        primary-foreground: #000000,
+        primary-glow: #00f5ff50,
+        
+        secondary: #ff00aa,            // Hot Magenta
+        secondary-hover: #ff33bb,
+        secondary-active: #cc0088,
+        secondary-foreground: #ffffff,
+        
+        accent: #fff000,               // Digital Yellow
+        accent-hover: #fff333,
+        accent-active: #ccc000,
+        accent-foreground: #000000,
+        accent-glow: #fff00040,
+        
+        // ─────────────────────────────────────────────────────────────────────
+        // Neutral Colors - Deep Dark with Blue Tint
+        // ─────────────────────────────────────────────────────────────────────
+        background: #05080d,           // Near-black with blue
+        background-alt: #0a0f18,
+        background-elevated: #0f1520,
+        background-sunken: #020406,
+        
+        surface: #111827,              // Dark surface
+        surface-hover: #1a2235,
+        surface-active: #232d42,
+        surface-elevated: #1e293b,
+        surface-overlay: #11182780,
+        
+        // ─────────────────────────────────────────────────────────────────────
+        // Text Colors
+        // ─────────────────────────────────────────────────────────────────────
+        text-primary: #f0f4f8,
+        text-secondary: #94a3b8,
+        text-tertiary: #64748b,
+        text-disabled: #475569,
+        text-inverse: #0f172a,
+        text-link: #00f5ff,
+        text-link-hover: #33f7ff,
+        
+        // ─────────────────────────────────────────────────────────────────────
+        // Semantic Colors
+        // ─────────────────────────────────────────────────────────────────────
+        success: #00ff88,              // Neon Green
+        success-hover: #33ff9f,
+        success-bg: #00ff8815,
+        success-foreground: #000000,
+        
+        warning: #ffaa00,              // Amber
+        warning-hover: #ffbb33,
+        warning-bg: #ffaa0015,
+        warning-foreground: #000000,
+        
+        error: #ff0055,                // Neon Red
+        error-hover: #ff3377,
+        error-bg: #ff005515,
+        error-foreground: #ffffff,
+        
+        info: #00aaff,                 // Sky Blue
+        info-hover: #33bbff,
+        info-bg: #00aaff15,
+        info-foreground: #000000,
+        
+        // ─────────────────────────────────────────────────────────────────────
+        // Border Colors
+        // ─────────────────────────────────────────────────────────────────────
+        border: #1e293b,
+        border-hover: #334155,
+        border-focus: #00f5ff,
+        border-active: #ff00aa,
+        border-error: #ff0055,
+        border-success: #00ff88,
+        
+        // ─────────────────────────────────────────────────────────────────────
+        // Interactive States
+        // ─────────────────────────────────────────────────────────────────────
+        focus-ring: #00f5ff80,
+        selection: #00f5ff30,
+        selection-foreground: #ffffff,
+        highlight: #ff00aa20,
+        
+        // ─────────────────────────────────────────────────────────────────────
+        // Effects - Glows and Shadows
+        // ─────────────────────────────────────────────────────────────────────
+        shadow-color: #00000080,
+        glow-color: #00f5ff40,
+        overlay: #05080dcc,
+        backdrop: #05080de6,
+        
+        // ─────────────────────────────────────────────────────────────────────
+        // Gradients
+        // ─────────────────────────────────────────────────────────────────────
+        gradient-start: #00f5ff,
+        gradient-mid: #7f00ff,
+        gradient-end: #ff00aa,
+        
+        // ─────────────────────────────────────────────────────────────────────
+        // Special UI Elements
+        // ─────────────────────────────────────────────────────────────────────
+        scrollbar-track: #111827,
+        scrollbar-thumb: #334155,
+        scrollbar-thumb-hover: #00f5ff,
+        
+        tooltip-bg: #1e293bF0,
+        tooltip-text: #f0f4f8,
+        
+        skeleton-base: #1e293b,
+        skeleton-shine: #334155,
+        
+        code-bg: #0d1117,
+        code-text: #f0f4f8,
+        code-keyword: #ff00aa,
+        code-string: #00ff88,
+        code-number: #fff000,
+        code-comment: #64748b,
+    };
+}
+
+// Apply Cyberpunk theme when active
+export global ApplyCyberpunkTheme {
+    init => {
+        if Theme.active-theme-index == 0 {
+            Theme.colors = CyberpunkTheme.colors;
+        }
+    }
+}

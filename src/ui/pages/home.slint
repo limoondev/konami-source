@@ -1,0 +1,736 @@
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║                        KONAMI CLIENT - HOME PAGE                             ║
+// ║                                                                               ║
+// ║  The stunning landing experience featuring hero section, news carousel,      ║
+// ║  quick actions, and immersive 3D-inspired visual design.                     ║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
+
+import { ThemeManager } from "../theme/theme.slint";
+import { KonamiButton, PlayButton, IconButton, ButtonVariant, ButtonSize } from "../components/button.slint";
+import { GlassCard, ProfileCard, NewsCard, StatCard } from "../components/card.slint";
+import { AnimatedProgress } from "../components/progress.slint";
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DATA STRUCTURES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export struct NewsItem {
+    id: string,
+    title: string,
+    description: string,
+    image-url: string,
+    category: string,
+    date: string,
+    is-new: bool,
+}
+
+export struct QuickAction {
+    id: string,
+    icon: string,
+    label: string,
+    description: string,
+    color: color,
+}
+
+export struct PlayerStats {
+    total-playtime: string,
+    sessions-this-week: int,
+    favorite-version: string,
+    mods-installed: int,
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HOME PAGE COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export component HomePage inherits Rectangle {
+    // ─────────────────────────────────────────────────────────────────────────
+    // Properties
+    // ─────────────────────────────────────────────────────────────────────────
+    in property <string> username: "Player";
+    in property <string> avatar-url: "";
+    in property <string> selected-profile: "Latest Release";
+    in property <string> selected-version: "1.21.4";
+    in property <bool> is-logged-in: true;
+    in property <bool> game-running: false;
+    in property <bool> is-launching: false;
+    in property <float> launch-progress: 0.0;
+    in property <[NewsItem]> news-items: [];
+    in property <PlayerStats> stats: {
+        total-playtime: "127h 34m",
+        sessions-this-week: 12,
+        favorite-version: "1.21.4",
+        mods-installed: 47,
+    };
+    
+    // Callbacks
+    callback launch-clicked();
+    callback stop-clicked();
+    callback profile-clicked();
+    callback version-clicked();
+    callback news-item-clicked(string);
+    callback quick-action-clicked(string);
+    callback settings-clicked();
+    callback login-clicked();
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // Styling
+    // ─────────────────────────────────────────────────────────────────────────
+    background: ThemeManager.colors.background;
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // Layout
+    // ─────────────────────────────────────────────────────────────────────────
+    VerticalLayout {
+        padding: 32px;
+        spacing: 32px;
+        
+        // ═══════════════════════════════════════════════════════════════════════
+        // HERO SECTION
+        // ═══════════════════════════════════════════════════════════════════════
+        Rectangle {
+            height: 280px;
+            border-radius: 24px;
+            clip: true;
+            
+            // Gradient background with animated mesh effect
+            background: @linear-gradient(135deg, 
+                ThemeManager.colors.primary.with-alpha(0.15) 0%,
+                ThemeManager.colors.background-secondary 50%,
+                ThemeManager.colors.accent.with-alpha(0.1) 100%
+            );
+            
+            // Decorative glow orbs
+            Rectangle {
+                x: -100px;
+                y: -50px;
+                width: 300px;
+                height: 300px;
+                border-radius: 150px;
+                background: @radial-gradient(circle, 
+                    ThemeManager.colors.primary.with-alpha(0.2) 0%,
+                    transparent 70%
+                );
+            }
+            
+            Rectangle {
+                x: parent.width - 150px;
+                y: parent.height - 100px;
+                width: 250px;
+                height: 250px;
+                border-radius: 125px;
+                background: @radial-gradient(circle, 
+                    ThemeManager.colors.accent.with-alpha(0.15) 0%,
+                    transparent 70%
+                );
+            }
+            
+            // Content
+            HorizontalLayout {
+                padding: 40px;
+                spacing: 40px;
+                
+                // Left side - Welcome & Play
+                VerticalLayout {
+                    horizontal-stretch: 1;
+                    spacing: 16px;
+                    alignment: center;
+                    
+                    // Welcome message
+                    Text {
+                        text: is-logged-in ? "Welcome back," : "Welcome to";
+                        font-size: 16px;
+                        font-weight: 500;
+                        color: ThemeManager.colors.foreground-muted;
+                        letter-spacing: 1px;
+                    }
+                    
+                    Text {
+                        text: is-logged-in ? username : "Konami Client";
+                        font-size: 42px;
+                        font-weight: 800;
+                        color: ThemeManager.colors.foreground;
+                        letter-spacing: -1px;
+                    }
+                    
+                    // Profile selector
+                    HorizontalLayout {
+                        spacing: 8px;
+                        
+                        Rectangle {
+                            width: profile-layout.preferred-width + 24px;
+                            height: 36px;
+                            border-radius: 18px;
+                            background: ThemeManager.colors.surface.with-alpha(0.8);
+                            border-width: 1px;
+                            border-color: ThemeManager.colors.border;
+                            
+                            profile-touch := TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => { profile-clicked(); }
+                            }
+                            
+                            profile-layout := HorizontalLayout {
+                                padding-left: 12px;
+                                padding-right: 12px;
+                                spacing: 8px;
+                                alignment: center;
+                                
+                                Text {
+                                    text: "\u{f11b}";
+                                    font-size: 14px;
+                                    color: ThemeManager.colors.primary;
+                                    vertical-alignment: center;
+                                }
+                                
+                                Text {
+                                    text: selected-profile;
+                                    font-size: 13px;
+                                    font-weight: 500;
+                                    color: ThemeManager.colors.foreground;
+                                    vertical-alignment: center;
+                                }
+                                
+                                Text {
+                                    text: "\u{f078}";
+                                    font-size: 10px;
+                                    color: ThemeManager.colors.foreground-muted;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                        
+                        // Version badge
+                        Rectangle {
+                            width: version-text.preferred-width + 16px;
+                            height: 36px;
+                            border-radius: 18px;
+                            background: ThemeManager.colors.surface.with-alpha(0.6);
+                            
+                            version-text := Text {
+                                text: selected-version;
+                                font-size: 12px;
+                                font-weight: 600;
+                                color: ThemeManager.colors.foreground-muted;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                    
+                    Rectangle { height: 8px; }
+                    
+                    // Play button
+                    if is-logged-in: PlayButton {
+                        text: game-running ? "PLAYING" : "PLAY";
+                        subtitle: game-running ? "" : selected-profile;
+                        disabled: game-running;
+                        loading: is-launching;
+                        progress: launch-progress;
+                        
+                        clicked => {
+                            if game-running {
+                                stop-clicked();
+                            } else {
+                                launch-clicked();
+                            }
+                        }
+                    }
+                    
+                    // Login button for logged out state
+                    if !is-logged-in: KonamiButton {
+                        text: "Sign In with Microsoft";
+                        icon: "\u{f3ca}";
+                        variant: ButtonVariant.primary;
+                        size: ButtonSize.lg;
+                        
+                        clicked => { login-clicked(); }
+                    }
+                }
+                
+                // Right side - Stats Grid
+                if is-logged-in: VerticalLayout {
+                    width: 280px;
+                    spacing: 12px;
+                    alignment: center;
+                    
+                    Text {
+                        text: "Your Stats";
+                        font-size: 14px;
+                        font-weight: 600;
+                        color: ThemeManager.colors.foreground-muted;
+                        letter-spacing: 0.5px;
+                    }
+                    
+                    // Stats grid
+                    GridLayout {
+                        spacing: 12px;
+                        Row {
+                            MiniStatCard {
+                                icon: "\u{f017}";
+                                label: "Playtime";
+                                value: stats.total-playtime;
+                                accent: ThemeManager.colors.primary;
+                            }
+                            MiniStatCard {
+                                icon: "\u{f11b}";
+                                label: "Sessions";
+                                value: stats.sessions-this-week + " this week";
+                                accent: ThemeManager.colors.accent;
+                            }
+                        }
+                        Row {
+                            MiniStatCard {
+                                icon: "\u{f005}";
+                                label: "Favorite";
+                                value: stats.favorite-version;
+                                accent: ThemeManager.colors.warning;
+                            }
+                            MiniStatCard {
+                                icon: "\u{f12e}";
+                                label: "Mods";
+                                value: stats.mods-installed + " installed";
+                                accent: ThemeManager.colors.success;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════════
+        // QUICK ACTIONS BAR
+        // ═══════════════════════════════════════════════════════════════════════
+        HorizontalLayout {
+            spacing: 16px;
+            
+            QuickActionTile {
+                icon: "\u{f1b2}";
+                label: "Mod Browser";
+                color: ThemeManager.colors.primary;
+                clicked => { quick-action-clicked("mods"); }
+            }
+            
+            QuickActionTile {
+                icon: "\u{f007}";
+                label: "Skins";
+                color: ThemeManager.colors.secondary;
+                clicked => { quick-action-clicked("skins"); }
+            }
+            
+            QuickActionTile {
+                icon: "\u{f11b}";
+                label: "Profiles";
+                color: ThemeManager.colors.accent;
+                clicked => { quick-action-clicked("profiles"); }
+            }
+            
+            QuickActionTile {
+                icon: "\u{f019}";
+                label: "Downloads";
+                color: ThemeManager.colors.success;
+                clicked => { quick-action-clicked("downloads"); }
+            }
+            
+            QuickActionTile {
+                icon: "\u{f013}";
+                label: "Settings";
+                color: ThemeManager.colors.foreground-muted;
+                clicked => { quick-action-clicked("settings"); }
+            }
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════════
+        // NEWS SECTION
+        // ═══════════════════════════════════════════════════════════════════════
+        VerticalLayout {
+            vertical-stretch: 1;
+            spacing: 16px;
+            
+            // Section header
+            HorizontalLayout {
+                alignment: space-between;
+                
+                HorizontalLayout {
+                    spacing: 12px;
+                    
+                    Text {
+                        text: "Latest News";
+                        font-size: 20px;
+                        font-weight: 700;
+                        color: ThemeManager.colors.foreground;
+                        vertical-alignment: center;
+                    }
+                    
+                    // "New" badge
+                    Rectangle {
+                        width: 40px;
+                        height: 20px;
+                        border-radius: 10px;
+                        background: ThemeManager.colors.error;
+                        
+                        Text {
+                            text: "NEW";
+                            font-size: 10px;
+                            font-weight: 700;
+                            color: white;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                            letter-spacing: 0.5px;
+                        }
+                    }
+                }
+                
+                KonamiButton {
+                    text: "View All";
+                    icon-right: "\u{f061}";
+                    variant: ButtonVariant.ghost;
+                    size: ButtonSize.sm;
+                }
+            }
+            
+            // News cards grid
+            HorizontalLayout {
+                spacing: 16px;
+                
+                // Featured news (large)
+                if news-items.length > 0: FeaturedNewsCard {
+                    horizontal-stretch: 2;
+                    item: news-items[0];
+                    clicked => { news-item-clicked(news-items[0].id); }
+                }
+                
+                // Secondary news (stacked)
+                VerticalLayout {
+                    horizontal-stretch: 1;
+                    spacing: 16px;
+                    
+                    if news-items.length > 1: CompactNewsCard {
+                        item: news-items[1];
+                        clicked => { news-item-clicked(news-items[1].id); }
+                    }
+                    
+                    if news-items.length > 2: CompactNewsCard {
+                        item: news-items[2];
+                        clicked => { news-item-clicked(news-items[2].id); }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MINI STAT CARD
+// ═══════════════════════════════════════════════════════════════════════════════
+
+component MiniStatCard inherits Rectangle {
+    in property <string> icon;
+    in property <string> label;
+    in property <string> value;
+    in property <color> accent: ThemeManager.colors.primary;
+    
+    width: 125px;
+    height: 72px;
+    border-radius: 12px;
+    background: ThemeManager.colors.surface.with-alpha(0.6);
+    border-width: 1px;
+    border-color: ThemeManager.colors.border.with-alpha(0.5);
+    
+    VerticalLayout {
+        padding: 12px;
+        spacing: 4px;
+        
+        HorizontalLayout {
+            spacing: 6px;
+            
+            Text {
+                text: icon;
+                font-size: 12px;
+                color: accent;
+                vertical-alignment: center;
+            }
+            
+            Text {
+                text: label;
+                font-size: 10px;
+                font-weight: 500;
+                color: ThemeManager.colors.foreground-muted;
+                vertical-alignment: center;
+                letter-spacing: 0.5px;
+            }
+        }
+        
+        Text {
+            text: value;
+            font-size: 14px;
+            font-weight: 700;
+            color: ThemeManager.colors.foreground;
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// QUICK ACTION TILE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+component QuickActionTile inherits Rectangle {
+    in property <string> icon;
+    in property <string> label;
+    in property <color> color: ThemeManager.colors.primary;
+    
+    callback clicked();
+    
+    property <bool> is-hovered: touch.has-hover;
+    property <bool> is-pressed: touch.pressed;
+    
+    horizontal-stretch: 1;
+    height: 80px;
+    border-radius: 16px;
+    background: is-hovered ? ThemeManager.colors.surface-hover : ThemeManager.colors.surface;
+    border-width: 1px;
+    border-color: is-hovered ? color.with-alpha(0.3) : ThemeManager.colors.border;
+    
+    drop-shadow-blur: is-hovered ? 16px : 0px;
+    drop-shadow-color: color.with-alpha(0.2);
+    
+    animate background { duration: 150ms; }
+    animate border-color { duration: 150ms; }
+    animate drop-shadow-blur { duration: 200ms; }
+    
+    VerticalLayout {
+        alignment: center;
+        spacing: 8px;
+        
+        Rectangle {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: color.with-alpha(is-hovered ? 0.2 : 0.1);
+            
+            animate background { duration: 150ms; }
+            
+            Text {
+                text: icon;
+                font-size: 18px;
+                color: color;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+        
+        Text {
+            text: label;
+            font-size: 12px;
+            font-weight: 600;
+            color: is-hovered ? ThemeManager.colors.foreground : ThemeManager.colors.foreground-muted;
+            horizontal-alignment: center;
+            
+            animate color { duration: 150ms; }
+        }
+    }
+    
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FEATURED NEWS CARD
+// ═══════════════════════════════════════════════════════════════════════════════
+
+component FeaturedNewsCard inherits Rectangle {
+    in property <NewsItem> item;
+    
+    callback clicked();
+    
+    property <bool> is-hovered: touch.has-hover;
+    
+    height: 220px;
+    border-radius: 16px;
+    background: ThemeManager.colors.surface;
+    border-width: 1px;
+    border-color: is-hovered ? ThemeManager.colors.primary.with-alpha(0.3) : ThemeManager.colors.border;
+    clip: true;
+    
+    animate border-color { duration: 150ms; }
+    
+    // Background gradient
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        background: @linear-gradient(180deg,
+            ThemeManager.colors.primary.with-alpha(0.05) 0%,
+            transparent 50%,
+            ThemeManager.colors.surface 100%
+        );
+    }
+    
+    VerticalLayout {
+        padding: 24px;
+        spacing: 12px;
+        
+        // Category badge
+        HorizontalLayout {
+            Rectangle {
+                width: category-text.preferred-width + 16px;
+                height: 24px;
+                border-radius: 12px;
+                background: ThemeManager.colors.primary.with-alpha(0.15);
+                
+                category-text := Text {
+                    text: item.category;
+                    font-size: 11px;
+                    font-weight: 600;
+                    color: ThemeManager.colors.primary;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                    letter-spacing: 0.5px;
+                }
+            }
+            
+            if item.is-new: Rectangle {
+                width: 8px;
+                height: 8px;
+                border-radius: 4px;
+                background: ThemeManager.colors.error;
+                x: 8px;
+            }
+        }
+        
+        // Title
+        Text {
+            text: item.title;
+            font-size: 22px;
+            font-weight: 700;
+            color: ThemeManager.colors.foreground;
+            wrap: word-wrap;
+            overflow: elide;
+        }
+        
+        // Description
+        Text {
+            text: item.description;
+            font-size: 14px;
+            font-weight: 400;
+            color: ThemeManager.colors.foreground-muted;
+            wrap: word-wrap;
+            overflow: elide;
+            vertical-stretch: 1;
+        }
+        
+        // Footer
+        HorizontalLayout {
+            alignment: space-between;
+            
+            Text {
+                text: item.date;
+                font-size: 12px;
+                color: ThemeManager.colors.foreground-subtle;
+                vertical-alignment: center;
+            }
+            
+            HorizontalLayout {
+                spacing: 4px;
+                
+                Text {
+                    text: "Read more";
+                    font-size: 12px;
+                    font-weight: 500;
+                    color: ThemeManager.colors.primary;
+                    vertical-alignment: center;
+                }
+                
+                Text {
+                    text: "\u{f061}";
+                    font-size: 12px;
+                    color: ThemeManager.colors.primary;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+    
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// COMPACT NEWS CARD
+// ═══════════════════════════════════════════════════════════════════════════════
+
+component CompactNewsCard inherits Rectangle {
+    in property <NewsItem> item;
+    
+    callback clicked();
+    
+    property <bool> is-hovered: touch.has-hover;
+    
+    vertical-stretch: 1;
+    border-radius: 12px;
+    background: is-hovered ? ThemeManager.colors.surface-hover : ThemeManager.colors.surface;
+    border-width: 1px;
+    border-color: is-hovered ? ThemeManager.colors.border-hover : ThemeManager.colors.border;
+    
+    animate background { duration: 150ms; }
+    animate border-color { duration: 150ms; }
+    
+    HorizontalLayout {
+        padding: 16px;
+        spacing: 16px;
+        
+        // Icon placeholder
+        Rectangle {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            background: ThemeManager.colors.primary.with-alpha(0.1);
+            
+            Text {
+                text: "\u{f1ea}";
+                font-size: 20px;
+                color: ThemeManager.colors.primary;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+        
+        VerticalLayout {
+            horizontal-stretch: 1;
+            spacing: 4px;
+            alignment: center;
+            
+            Text {
+                text: item.title;
+                font-size: 14px;
+                font-weight: 600;
+                color: ThemeManager.colors.foreground;
+                overflow: elide;
+            }
+            
+            Text {
+                text: item.date + " - " + item.category;
+                font-size: 11px;
+                color: ThemeManager.colors.foreground-muted;
+            }
+        }
+        
+        // Arrow
+        Text {
+            text: "\u{f054}";
+            font-size: 12px;
+            color: is-hovered ? ThemeManager.colors.primary : ThemeManager.colors.foreground-subtle;
+            vertical-alignment: center;
+            
+            animate color { duration: 150ms; }
+        }
+    }
+    
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}

@@ -1,0 +1,371 @@
+// =============================================================================
+// Konami Client - Modal Components
+// Beautiful dialogs and popups with smooth animations
+// =============================================================================
+
+import { KonamiTheme, ThemeColors, Animations, Spacing } from "../theme/theme.slint";
+import { KonamiButton } from "./button.slint";
+import { GlassCard } from "./card.slint";
+
+// =============================================================================
+// Modal Backdrop
+// =============================================================================
+
+component ModalBackdrop inherits Rectangle {
+    in property <bool> visible: false;
+    
+    callback clicked();
+    
+    opacity: visible ? 1.0 : 0.0;
+    background: #000000.transparentize(0.4);
+    
+    animate opacity { duration: Animations.duration-normal; easing: ease-out; }
+    
+    TouchArea {
+        clicked => { root.clicked(); }
+    }
+}
+
+// =============================================================================
+// Base Modal Container
+// =============================================================================
+
+export component Modal inherits Rectangle {
+    in property <bool> show: false;
+    in property <string> title: "Modal";
+    in property <length> modal-width: 480px;
+    in property <length> modal-height: auto;
+    
+    callback close();
+    callback confirmed();
+    
+    visible: show;
+    
+    // Backdrop
+    ModalBackdrop {
+        width: 100%;
+        height: 100%;
+        visible: root.show;
+        
+        clicked => { root.close(); }
+    }
+    
+    // Modal content
+    Rectangle {
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        width: root.modal-width;
+        height: root.modal-height == 0px ? content.preferred-height + 2 * Spacing.xl : root.modal-height;
+        border-radius: 20px;
+        background: ThemeColors.surface-primary;
+        border-width: 1px;
+        border-color: ThemeColors.border-subtle;
+        
+        drop-shadow-blur: 40px;
+        drop-shadow-color: #000000.transparentize(0.7);
+        drop-shadow-offset-y: 20px;
+        
+        // Scale animation
+        property <float> scale: show ? 1.0 : 0.9;
+        animate scale { duration: Animations.duration-normal; easing: ease-out; }
+        
+        opacity: show ? 1.0 : 0.0;
+        animate opacity { duration: Animations.duration-normal; }
+        
+        content := VerticalLayout {
+            padding: Spacing.xl;
+            spacing: Spacing.lg;
+            
+            // Header
+            HorizontalLayout {
+                Text {
+                    text: root.title;
+                    font-size: 20px;
+                    font-weight: 700;
+                    color: ThemeColors.text-primary;
+                    vertical-alignment: center;
+                }
+                
+                Rectangle { }
+                
+                // Close button
+                Rectangle {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 8px;
+                    background: touch-close.has-hover ? ThemeColors.surface-hover : transparent;
+                    
+                    touch-close := TouchArea {
+                        clicked => { root.close(); }
+                    }
+                    
+                    Text {
+                        x: (parent.width - self.width) / 2;
+                        y: (parent.height - self.height) / 2;
+                        text: "✕";
+                        font-size: 16px;
+                        color: ThemeColors.text-tertiary;
+                    }
+                }
+            }
+            
+            // Content slot
+            @children
+        }
+    }
+}
+
+// =============================================================================
+// Confirmation Modal
+// =============================================================================
+
+export component ConfirmModal inherits Rectangle {
+    in property <bool> show: false;
+    in property <string> title: "Confirm Action";
+    in property <string> message: "Are you sure you want to proceed?";
+    in property <string> confirm-text: "Confirm";
+    in property <string> cancel-text: "Cancel";
+    in property <bool> danger: false;
+    
+    callback confirmed();
+    callback cancelled();
+    
+    visible: show;
+    
+    ModalBackdrop {
+        width: 100%;
+        height: 100%;
+        visible: root.show;
+        
+        clicked => { root.cancelled(); }
+    }
+    
+    Rectangle {
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        width: 400px;
+        border-radius: 20px;
+        background: ThemeColors.surface-primary;
+        border-width: 1px;
+        border-color: ThemeColors.border-subtle;
+        
+        drop-shadow-blur: 40px;
+        drop-shadow-color: #000000.transparentize(0.7);
+        drop-shadow-offset-y: 20px;
+        
+        opacity: show ? 1.0 : 0.0;
+        animate opacity { duration: Animations.duration-normal; }
+        
+        VerticalLayout {
+            padding: Spacing.xl;
+            spacing: Spacing.lg;
+            
+            // Icon
+            Rectangle {
+                width: 64px;
+                height: 64px;
+                border-radius: 16px;
+                background: danger ? 
+                    ThemeColors.status-error.transparentize(0.9) : 
+                    ThemeColors.accent-primary.transparentize(0.9);
+                
+                Text {
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                    text: danger ? "⚠" : "?";
+                    font-size: 28px;
+                    color: danger ? ThemeColors.status-error : ThemeColors.accent-primary;
+                }
+            }
+            
+            // Title
+            Text {
+                text: root.title;
+                font-size: 18px;
+                font-weight: 700;
+                color: ThemeColors.text-primary;
+                horizontal-alignment: center;
+            }
+            
+            // Message
+            Text {
+                text: root.message;
+                font-size: 14px;
+                color: ThemeColors.text-secondary;
+                horizontal-alignment: center;
+                wrap: word-wrap;
+            }
+            
+            // Buttons
+            HorizontalLayout {
+                spacing: Spacing.md;
+                
+                KonamiButton {
+                    width: 50%;
+                    text: root.cancel-text;
+                    variant: ghost;
+                    
+                    clicked => { root.cancelled(); }
+                }
+                
+                KonamiButton {
+                    width: 50%;
+                    text: root.confirm-text;
+                    variant: danger ? danger : primary;
+                    
+                    clicked => { root.confirmed(); }
+                }
+            }
+        }
+    }
+}
+
+// =============================================================================
+// Toast Notification
+// =============================================================================
+
+export enum ToastType {
+    Info,
+    Success,
+    Warning,
+    Error
+}
+
+export component Toast inherits Rectangle {
+    in property <bool> show: false;
+    in property <ToastType> toast-type: ToastType.Info;
+    in property <string> message: "";
+    in property <int> duration-ms: 3000;
+    
+    callback dismissed();
+    
+    property <color> toast-color: 
+        toast-type == ToastType.Info ? ThemeColors.accent-primary :
+        toast-type == ToastType.Success ? ThemeColors.status-success :
+        toast-type == ToastType.Warning ? ThemeColors.status-warning :
+        ThemeColors.status-error;
+    
+    property <string> toast-icon:
+        toast-type == ToastType.Info ? "ℹ" :
+        toast-type == ToastType.Success ? "✓" :
+        toast-type == ToastType.Warning ? "⚠" : "✕";
+    
+    x: (parent.width - self.width) / 2;
+    y: show ? 20px : -80px;
+    width: 400px;
+    height: 56px;
+    border-radius: 12px;
+    background: ThemeColors.surface-primary;
+    border-width: 1px;
+    border-color: toast-color.transparentize(0.7);
+    
+    drop-shadow-blur: 20px;
+    drop-shadow-color: #000000.transparentize(0.8);
+    drop-shadow-offset-y: 10px;
+    
+    animate y { duration: Animations.duration-normal; easing: ease-out; }
+    
+    HorizontalLayout {
+        padding: Spacing.md;
+        spacing: Spacing.md;
+        
+        // Icon
+        Rectangle {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: root.toast-color.transparentize(0.9);
+            
+            Text {
+                x: (parent.width - self.width) / 2;
+                y: (parent.height - self.height) / 2;
+                text: root.toast-icon;
+                font-size: 16px;
+                color: root.toast-color;
+            }
+        }
+        
+        // Message
+        Text {
+            text: root.message;
+            font-size: 14px;
+            color: ThemeColors.text-primary;
+            vertical-alignment: center;
+        }
+        
+        Rectangle { }
+        
+        // Dismiss button
+        Rectangle {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: touch.has-hover ? ThemeColors.surface-hover : transparent;
+            
+            touch := TouchArea {
+                clicked => { root.dismissed(); }
+            }
+            
+            Text {
+                x: (parent.width - self.width) / 2;
+                y: (parent.height - self.height) / 2;
+                text: "✕";
+                font-size: 12px;
+                color: ThemeColors.text-tertiary;
+            }
+        }
+    }
+}
+
+// =============================================================================
+// Loading Overlay
+// =============================================================================
+
+export component LoadingOverlay inherits Rectangle {
+    in property <bool> show: false;
+    in property <string> message: "Loading...";
+    
+    visible: show;
+    background: ThemeColors.background-primary.transparentize(0.3);
+    
+    opacity: show ? 1.0 : 0.0;
+    animate opacity { duration: Animations.duration-normal; }
+    
+    VerticalLayout {
+        alignment: center;
+        spacing: Spacing.lg;
+        
+        // Spinner
+        Rectangle {
+            width: 48px;
+            height: 48px;
+            
+            Rectangle {
+                width: 100%;
+                height: 100%;
+                border-radius: 24px;
+                border-width: 3px;
+                border-color: ThemeColors.accent-primary.transparentize(0.7);
+            }
+            
+            Rectangle {
+                width: 100%;
+                height: 100%;
+                border-radius: 24px;
+                border-width: 3px;
+                border-color: transparent;
+                border-top-color: ThemeColors.accent-primary;
+                
+                // Rotation animation
+                rotation-angle: animation-tick() / 1s * 360deg;
+            }
+        }
+        
+        Text {
+            text: root.message;
+            font-size: 14px;
+            color: ThemeColors.text-secondary;
+            horizontal-alignment: center;
+        }
+    }
+}

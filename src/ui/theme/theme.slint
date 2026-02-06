@@ -1,0 +1,413 @@
+// Konami Client - Theme System
+// Dynamic theming with multiple presets and customization
+
+// Color structure for themes
+export struct ThemeColors {
+    // Primary colors
+    primary: color,
+    primary-hover: color,
+    primary-active: color,
+    primary-foreground: color,
+    
+    // Secondary colors
+    secondary: color,
+    secondary-hover: color,
+    secondary-foreground: color,
+    
+    // Accent colors
+    accent: color,
+    accent-hover: color,
+    accent-foreground: color,
+    
+    // Background layers
+    background: color,
+    background-secondary: color,
+    background-tertiary: color,
+    
+    // Surface colors
+    surface: color,
+    surface-hover: color,
+    surface-active: color,
+    
+    // Text colors
+    foreground: color,
+    foreground-muted: color,
+    foreground-subtle: color,
+    
+    // Semantic colors
+    success: color,
+    success-foreground: color,
+    warning: color,
+    warning-foreground: color,
+    error: color,
+    error-foreground: color,
+    info: color,
+    info-foreground: color,
+    
+    // Border colors
+    border: color,
+    border-hover: color,
+    border-focus: color,
+    
+    // Special effects
+    glow: color,
+    shadow: color,
+    overlay: color,
+}
+
+// Typography settings
+export struct Typography {
+    font-family: string,
+    font-family-mono: string,
+    font-size-xs: length,
+    font-size-sm: length,
+    font-size-base: length,
+    font-size-lg: length,
+    font-size-xl: length,
+    font-size-2xl: length,
+    font-size-3xl: length,
+    font-size-4xl: length,
+    font-weight-normal: int,
+    font-weight-medium: int,
+    font-weight-semibold: int,
+    font-weight-bold: int,
+    line-height: float,
+}
+
+// Spacing scale
+export struct Spacing {
+    xs: length,
+    sm: length,
+    md: length,
+    lg: length,
+    xl: length,
+    xxl: length,
+}
+
+// Border radius
+export struct Radius {
+    none: length,
+    sm: length,
+    md: length,
+    lg: length,
+    xl: length,
+    full: length,
+}
+
+// Animation settings
+export struct Animation {
+    duration-fast: duration,
+    duration-normal: duration,
+    duration-slow: duration,
+    easing-default: easing,
+    easing-bounce: easing,
+}
+
+// Complete theme structure
+export struct Theme {
+    name: string,
+    colors: ThemeColors,
+    typography: Typography,
+    spacing: Spacing,
+    radius: Radius,
+    animation: Animation,
+}
+
+// Cyberpunk Neon Theme
+export global CyberpunkTheme {
+    out property <ThemeColors> colors: {
+        primary: #00ffff,
+        primary-hover: #33ffff,
+        primary-active: #00cccc,
+        primary-foreground: #000000,
+        
+        secondary: #ff00ff,
+        secondary-hover: #ff33ff,
+        secondary-foreground: #000000,
+        
+        accent: #ffff00,
+        accent-hover: #ffff33,
+        accent-foreground: #000000,
+        
+        background: #0a0a0f,
+        background-secondary: #12121a,
+        background-tertiary: #1a1a25,
+        
+        surface: #1e1e2e,
+        surface-hover: #2a2a3e,
+        surface-active: #36364e,
+        
+        foreground: #ffffff,
+        foreground-muted: #a0a0b0,
+        foreground-subtle: #606070,
+        
+        success: #00ff88,
+        success-foreground: #000000,
+        warning: #ffaa00,
+        warning-foreground: #000000,
+        error: #ff0055,
+        error-foreground: #ffffff,
+        info: #00aaff,
+        info-foreground: #000000,
+        
+        border: #333344,
+        border-hover: #00ffff,
+        border-focus: #ff00ff,
+        
+        glow: #00ffff40,
+        shadow: #00000080,
+        overlay: #00000099,
+    };
+}
+
+// Glassmorphism Dark Theme
+export global GlassmorphismTheme {
+    out property <ThemeColors> colors: {
+        primary: #6366f1,
+        primary-hover: #818cf8,
+        primary-active: #4f46e5,
+        primary-foreground: #ffffff,
+        
+        secondary: #ec4899,
+        secondary-hover: #f472b6,
+        secondary-foreground: #ffffff,
+        
+        accent: #8b5cf6,
+        accent-hover: #a78bfa,
+        accent-foreground: #ffffff,
+        
+        background: #0f0f23,
+        background-secondary: #16163a,
+        background-tertiary: #1e1e4a,
+        
+        surface: #ffffff10,
+        surface-hover: #ffffff18,
+        surface-active: #ffffff20,
+        
+        foreground: #f8fafc,
+        foreground-muted: #94a3b8,
+        foreground-subtle: #64748b,
+        
+        success: #22c55e,
+        success-foreground: #ffffff,
+        warning: #f59e0b,
+        warning-foreground: #000000,
+        error: #ef4444,
+        error-foreground: #ffffff,
+        info: #3b82f6,
+        info-foreground: #ffffff,
+        
+        border: #ffffff15,
+        border-hover: #ffffff30,
+        border-focus: #6366f1,
+        
+        glow: #6366f130,
+        shadow: #00000040,
+        overlay: #0f0f23cc,
+    };
+}
+
+// Aurora Borealis Theme
+export global AuroraTheme {
+    out property <ThemeColors> colors: {
+        primary: #22d3ee,
+        primary-hover: #67e8f9,
+        primary-active: #06b6d4,
+        primary-foreground: #000000,
+        
+        secondary: #a855f7,
+        secondary-hover: #c084fc,
+        secondary-foreground: #ffffff,
+        
+        accent: #34d399,
+        accent-hover: #6ee7b7,
+        accent-foreground: #000000,
+        
+        background: #020617,
+        background-secondary: #0f172a,
+        background-tertiary: #1e293b,
+        
+        surface: #1e293b,
+        surface-hover: #334155,
+        surface-active: #475569,
+        
+        foreground: #f1f5f9,
+        foreground-muted: #94a3b8,
+        foreground-subtle: #64748b,
+        
+        success: #10b981,
+        success-foreground: #000000,
+        warning: #fbbf24,
+        warning-foreground: #000000,
+        error: #f43f5e,
+        error-foreground: #ffffff,
+        info: #38bdf8,
+        info-foreground: #000000,
+        
+        border: #334155,
+        border-hover: #22d3ee,
+        border-focus: #a855f7,
+        
+        glow: #22d3ee30,
+        shadow: #00000060,
+        overlay: #020617e6,
+    };
+}
+
+// Material You Theme
+export global MaterialTheme {
+    out property <ThemeColors> colors: {
+        primary: #6750a4,
+        primary-hover: #7c66b4,
+        primary-active: #4f3b8c,
+        primary-foreground: #ffffff,
+        
+        secondary: #625b71,
+        secondary-hover: #7a7389,
+        secondary-foreground: #ffffff,
+        
+        accent: #7d5260,
+        accent-hover: #957078,
+        accent-foreground: #ffffff,
+        
+        background: #1c1b1f,
+        background-secondary: #2b2930,
+        background-tertiary: #36343b,
+        
+        surface: #2b2930,
+        surface-hover: #36343b,
+        surface-active: #46444b,
+        
+        foreground: #e6e1e5,
+        foreground-muted: #cac4cf,
+        foreground-subtle: #938f99,
+        
+        success: #4caf50,
+        success-foreground: #000000,
+        warning: #fb8c00,
+        warning-foreground: #000000,
+        error: #f2b8b5,
+        error-foreground: #601410,
+        info: #a6c8ff,
+        info-foreground: #000000,
+        
+        border: #49454f,
+        border-hover: #6750a4,
+        border-focus: #d0bcff,
+        
+        glow: #d0bcff30,
+        shadow: #00000040,
+        overlay: #1c1b1fe6,
+    };
+}
+
+// Retro Arcade Theme
+export global RetroArcadeTheme {
+    out property <ThemeColors> colors: {
+        primary: #ff0080,
+        primary-hover: #ff33a0,
+        primary-active: #cc0066,
+        primary-foreground: #ffffff,
+        
+        secondary: #00ff00,
+        secondary-hover: #33ff33,
+        secondary-foreground: #000000,
+        
+        accent: #ffff00,
+        accent-hover: #ffff33,
+        accent-foreground: #000000,
+        
+        background: #000000,
+        background-secondary: #0a0a0a,
+        background-tertiary: #141414,
+        
+        surface: #1a1a1a,
+        surface-hover: #242424,
+        surface-active: #2e2e2e,
+        
+        foreground: #ffffff,
+        foreground-muted: #b0b0b0,
+        foreground-subtle: #707070,
+        
+        success: #00ff00,
+        success-foreground: #000000,
+        warning: #ffaa00,
+        warning-foreground: #000000,
+        error: #ff0000,
+        error-foreground: #ffffff,
+        info: #00aaff,
+        info-foreground: #000000,
+        
+        border: #333333,
+        border-hover: #ff0080,
+        border-focus: #00ff00,
+        
+        glow: #ff008050,
+        shadow: #ff008020,
+        overlay: #000000cc,
+    };
+}
+
+// Global Theme Manager
+export global ThemeManager {
+    in-out property <int> current-theme: 0; // 0=Cyberpunk, 1=Glass, 2=Aurora, 3=Material, 4=Retro
+    
+    out property <ThemeColors> colors: 
+        current-theme == 0 ? CyberpunkTheme.colors :
+        current-theme == 1 ? GlassmorphismTheme.colors :
+        current-theme == 2 ? AuroraTheme.colors :
+        current-theme == 3 ? MaterialTheme.colors :
+        RetroArcadeTheme.colors;
+    
+    out property <Typography> typography: {
+        font-family: "Inter",
+        font-family-mono: "JetBrains Mono",
+        font-size-xs: 10px,
+        font-size-sm: 12px,
+        font-size-base: 14px,
+        font-size-lg: 16px,
+        font-size-xl: 18px,
+        font-size-2xl: 24px,
+        font-size-3xl: 30px,
+        font-size-4xl: 36px,
+        font-weight-normal: 400,
+        font-weight-medium: 500,
+        font-weight-semibold: 600,
+        font-weight-bold: 700,
+        line-height: 1.5,
+    };
+    
+    out property <Spacing> spacing: {
+        xs: 4px,
+        sm: 8px,
+        md: 16px,
+        lg: 24px,
+        xl: 32px,
+        xxl: 48px,
+    };
+    
+    out property <Radius> radius: {
+        none: 0px,
+        sm: 4px,
+        md: 8px,
+        lg: 12px,
+        xl: 16px,
+        full: 9999px,
+    };
+    
+    out property <Animation> animation: {
+        duration-fast: 150ms,
+        duration-normal: 300ms,
+        duration-slow: 500ms,
+        easing-default: ease-in-out,
+        easing-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55),
+    };
+    
+    public function set-theme(theme-index: int) {
+        current-theme = theme-index;
+    }
+    
+    public function next-theme() {
+        current-theme = mod(current-theme + 1, 5);
+    }
+}

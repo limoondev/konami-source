@@ -1,0 +1,943 @@
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║                      KONAMI CLIENT - CARD COMPONENT LIBRARY                  ║
+// ║                                                                               ║
+// ║  Premium card components featuring glassmorphism, glow effects,              ║
+// ║  and fluid micro-interactions.                                                ║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
+
+import { ThemeManager } from "../theme/theme.slint";
+import { KonamiButton, ButtonVariant, ButtonSize } from "button.slint";
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GLASS CARD - Glassmorphism Style Card
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export component GlassCard inherits Rectangle {
+    in property <bool> hoverable: true;
+    in property <bool> clickable: false;
+    in property <bool> elevated: false;
+    in property <color> accent-color: transparent;
+    
+    callback clicked();
+    
+    property <bool> is-hovered: touch.has-hover && hoverable;
+    property <bool> is-pressed: touch.pressed && clickable;
+    
+    border-radius: 16px;
+    background: ThemeManager.colors.surface.with-alpha(elevated ? 0.9 : 0.7);
+    border-width: 1.5px;
+    border-color: is-hovered && accent-color != transparent ? 
+        accent-color.with-alpha(0.4) : 
+        is-hovered ? ThemeManager.colors.border-hover : ThemeManager.colors.border;
+    
+    drop-shadow-blur: elevated ? (is-hovered ? 24px : 16px) : (is-hovered ? 12px : 4px);
+    drop-shadow-color: accent-color != transparent ? 
+        accent-color.with-alpha(is-hovered ? 0.2 : 0.1) :
+        ThemeManager.colors.shadow.with-alpha(is-hovered ? 0.15 : 0.1);
+    drop-shadow-offset-y: elevated ? (is-pressed ? 2px : is-hovered ? 8px : 4px) : (is-hovered ? 4px : 2px);
+    
+    animate background { duration: 200ms; easing: ease-out; }
+    animate border-color { duration: 150ms; }
+    animate drop-shadow-blur { duration: 200ms; }
+    animate drop-shadow-offset-y { duration: 150ms; }
+    
+    // Accent glow at top
+    if accent-color != transparent: Rectangle {
+        x: 16px;
+        y: 0;
+        width: parent.width - 32px;
+        height: 3px;
+        border-radius: 0 0 2px 2px;
+        background: accent-color;
+        opacity: is-hovered ? 1.0 : 0.6;
+        
+        animate opacity { duration: 200ms; }
+    }
+    
+    @children
+    
+    touch := TouchArea {
+        mouse-cursor: clickable ? pointer : default;
+        clicked => { 
+            if clickable { root.clicked(); }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PROFILE CARD - User Profile Display
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export component ProfileCard inherits Rectangle {
+    in property <string> username: "Player";
+    in property <string> avatar-url: "";
+    in property <string> status: "Online";
+    in property <bool> is-premium: false;
+    in property <string> selected-profile: "Latest Release";
+    
+    callback clicked();
+    callback avatar-clicked();
+    callback profile-changed();
+    
+    property <bool> is-hovered: touch.has-hover;
+    
+    height: 72px;
+    border-radius: 16px;
+    background: is-hovered ? ThemeManager.colors.surface-hover : ThemeManager.colors.surface;
+    border-width: 1px;
+    border-color: is-hovered ? ThemeManager.colors.border-hover : ThemeManager.colors.border;
+    
+    animate background { duration: 150ms; }
+    animate border-color { duration: 150ms; }
+    
+    HorizontalLayout {
+        padding: 12px;
+        spacing: 12px;
+        
+        // Avatar
+        Rectangle {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: ThemeManager.colors.primary.with-alpha(0.2);
+            clip: true;
+            
+            avatar-touch := TouchArea {
+                mouse-cursor: pointer;
+                clicked => { avatar-clicked(); }
+            }
+            
+            VerticalLayout {
+                alignment: center;
+                
+                Text {
+                    text: "\u{f2bd}";
+                    font-size: 24px;
+                    color: ThemeManager.colors.primary;
+                    horizontal-alignment: center;
+                }
+            }
+            
+            // Online indicator
+            Rectangle {
+                x: parent.width - 14px;
+                y: parent.height - 14px;
+                width: 12px;
+                height: 12px;
+                border-radius: 6px;
+                background: status == "Online" ? ThemeManager.colors.success : 
+                           status == "Away" ? ThemeManager.colors.warning :
+                           ThemeManager.colors.foreground-subtle;
+                border-width: 2px;
+                border-color: ThemeManager.colors.surface;
+            }
+        }
+        
+        // Info
+        VerticalLayout {
+            horizontal-stretch: 1;
+            spacing: 2px;
+            alignment: center;
+            
+            HorizontalLayout {
+                spacing: 6px;
+                
+                Text {
+                    text: username;
+                    font-size: 15px;
+                    font-weight: 600;
+                    color: ThemeManager.colors.foreground;
+                    vertical-alignment: center;
+                }
+                
+                if is-premium: Rectangle {
+                    width: 18px;
+                    height: 18px;
+                    border-radius: 4px;
+                    background: @linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+                    
+                    Text {
+                        text: "\u{f005}";
+                        font-size: 10px;
+                        color: white;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+            
+            HorizontalLayout {
+                spacing: 4px;
+                
+                Text {
+                    text: selected-profile;
+                    font-size: 12px;
+                    color: ThemeManager.colors.foreground-muted;
+                    vertical-alignment: center;
+                }
+                
+                Text {
+                    text: "\u{f078}";
+                    font-size: 8px;
+                    color: ThemeManager.colors.foreground-subtle;
+                    vertical-alignment: center;
+                }
+            }
+        }
+        
+        // Settings icon
+        Rectangle {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: settings-touch.has-hover ? ThemeManager.colors.surface-active : transparent;
+            
+            animate background { duration: 150ms; }
+            
+            settings-touch := TouchArea {
+                mouse-cursor: pointer;
+                clicked => { clicked(); }
+            }
+            
+            Text {
+                text: "\u{f013}";
+                font-size: 16px;
+                color: settings-touch.has-hover ? ThemeManager.colors.foreground : ThemeManager.colors.foreground-muted;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                
+                animate color { duration: 150ms; }
+            }
+        }
+    }
+    
+    touch := TouchArea {
+        clicked => { profile-changed(); }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// NEWS CARD - News/Update Display
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export component NewsCard inherits Rectangle {
+    in property <string> title: "News Title";
+    in property <string> description: "News description goes here...";
+    in property <string> category: "Update";
+    in property <string> date: "2 hours ago";
+    in property <string> image-url: "";
+    in property <bool> is-featured: false;
+    in property <bool> is-unread: false;
+    
+    callback clicked();
+    
+    property <bool> is-hovered: touch.has-hover;
+    
+    height: is-featured ? 280px : 120px;
+    border-radius: 16px;
+    background: is-hovered ? ThemeManager.colors.surface-hover : ThemeManager.colors.surface;
+    border-width: 1px;
+    border-color: is-hovered ? ThemeManager.colors.primary.with-alpha(0.3) : ThemeManager.colors.border;
+    clip: true;
+    
+    animate background { duration: 150ms; }
+    animate border-color { duration: 150ms; }
+    
+    if is-featured: VerticalLayout {
+        Rectangle {
+            height: 140px;
+            background: @linear-gradient(135deg, 
+                ThemeManager.colors.primary.with-alpha(0.3) 0%,
+                ThemeManager.colors.accent.with-alpha(0.2) 100%
+            );
+            
+            Rectangle {
+                x: 16px;
+                y: 16px;
+                width: cat-text.preferred-width + 16px;
+                height: 26px;
+                border-radius: 13px;
+                background: ThemeManager.colors.surface.with-alpha(0.9);
+                
+                cat-text := Text {
+                    text: category;
+                    font-size: 11px;
+                    font-weight: 600;
+                    color: ThemeManager.colors.primary;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+            
+            if is-unread: Rectangle {
+                x: parent.width - 24px;
+                y: 16px;
+                width: 8px;
+                height: 8px;
+                border-radius: 4px;
+                background: ThemeManager.colors.error;
+            }
+        }
+        
+        VerticalLayout {
+            padding: 16px;
+            spacing: 8px;
+            
+            Text {
+                text: title;
+                font-size: 16px;
+                font-weight: 600;
+                color: ThemeManager.colors.foreground;
+                wrap: word-wrap;
+                overflow: elide;
+            }
+            
+            Text {
+                text: description;
+                font-size: 13px;
+                color: ThemeManager.colors.foreground-muted;
+                wrap: word-wrap;
+                overflow: elide;
+                vertical-stretch: 1;
+            }
+            
+            Text {
+                text: date;
+                font-size: 11px;
+                color: ThemeManager.colors.foreground-subtle;
+            }
+        }
+    }
+    
+    if !is-featured: HorizontalLayout {
+        padding: 16px;
+        spacing: 16px;
+        
+        Rectangle {
+            width: 88px;
+            height: 88px;
+            border-radius: 12px;
+            background: @linear-gradient(135deg, 
+                ThemeManager.colors.primary.with-alpha(0.2) 0%,
+                ThemeManager.colors.accent.with-alpha(0.1) 100%
+            );
+            
+            Text {
+                text: "\u{f1ea}";
+                font-size: 28px;
+                color: ThemeManager.colors.primary.with-alpha(0.6);
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+        
+        VerticalLayout {
+            horizontal-stretch: 1;
+            spacing: 6px;
+            
+            HorizontalLayout {
+                spacing: 8px;
+                
+                Rectangle {
+                    width: small-cat.preferred-width + 12px;
+                    height: 20px;
+                    border-radius: 10px;
+                    background: ThemeManager.colors.primary.with-alpha(0.15);
+                    
+                    small-cat := Text {
+                        text: category;
+                        font-size: 10px;
+                        font-weight: 600;
+                        color: ThemeManager.colors.primary;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                if is-unread: Rectangle {
+                    width: 6px;
+                    height: 6px;
+                    border-radius: 3px;
+                    background: ThemeManager.colors.error;
+                }
+            }
+            
+            Text {
+                text: title;
+                font-size: 14px;
+                font-weight: 600;
+                color: ThemeManager.colors.foreground;
+                wrap: word-wrap;
+                overflow: elide;
+            }
+            
+            Text {
+                text: description;
+                font-size: 12px;
+                color: ThemeManager.colors.foreground-muted;
+                overflow: elide;
+                vertical-stretch: 1;
+            }
+            
+            Text {
+                text: date;
+                font-size: 11px;
+                color: ThemeManager.colors.foreground-subtle;
+            }
+        }
+        
+        VerticalLayout {
+            alignment: center;
+            
+            Text {
+                text: "\u{f054}";
+                font-size: 14px;
+                color: is-hovered ? ThemeManager.colors.primary : ThemeManager.colors.foreground-subtle;
+                
+                animate color { duration: 150ms; }
+            }
+        }
+    }
+    
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STAT CARD - Statistics Display
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export component StatCard inherits Rectangle {
+    in property <string> icon: "\u{f017}";
+    in property <string> label: "Statistic";
+    in property <string> value: "0";
+    in property <string> change: "";
+    in property <bool> positive-change: true;
+    in property <color> accent: ThemeManager.colors.primary;
+    
+    property <bool> is-hovered: touch.has-hover;
+    
+    width: 180px;
+    height: 100px;
+    border-radius: 16px;
+    background: is-hovered ? ThemeManager.colors.surface-hover : ThemeManager.colors.surface;
+    border-width: 1px;
+    border-color: is-hovered ? accent.with-alpha(0.3) : ThemeManager.colors.border;
+    
+    drop-shadow-blur: is-hovered ? 12px : 0px;
+    drop-shadow-color: accent.with-alpha(0.15);
+    
+    animate background { duration: 150ms; }
+    animate border-color { duration: 150ms; }
+    animate drop-shadow-blur { duration: 200ms; }
+    
+    VerticalLayout {
+        padding: 16px;
+        spacing: 8px;
+        
+        HorizontalLayout {
+            spacing: 8px;
+            
+            Rectangle {
+                width: 32px;
+                height: 32px;
+                border-radius: 8px;
+                background: accent.with-alpha(0.15);
+                
+                Text {
+                    text: icon;
+                    font-size: 14px;
+                    color: accent;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+            
+            Text {
+                text: label;
+                font-size: 12px;
+                font-weight: 500;
+                color: ThemeManager.colors.foreground-muted;
+                vertical-alignment: center;
+            }
+        }
+        
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: start;
+            
+            Text {
+                text: value;
+                font-size: 28px;
+                font-weight: 700;
+                color: ThemeManager.colors.foreground;
+            }
+            
+            if change != "": Rectangle {
+                width: change-text.preferred-width + 8px;
+                height: 20px;
+                border-radius: 4px;
+                background: positive-change ? 
+                    ThemeManager.colors.success.with-alpha(0.15) :
+                    ThemeManager.colors.error.with-alpha(0.15);
+                
+                change-text := Text {
+                    text: change;
+                    font-size: 11px;
+                    font-weight: 600;
+                    color: positive-change ? ThemeManager.colors.success : ThemeManager.colors.error;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+    
+    touch := TouchArea { }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INSTANCE CARD - Game Instance/Profile Card
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export component InstanceCard inherits Rectangle {
+    in property <string> name: "Instance Name";
+    in property <string> version: "1.21.4";
+    in property <string> loader: "";
+    in property <string> loader-version: "";
+    in property <int> mod-count: 0;
+    in property <string> last-played: "Never";
+    in property <bool> is-selected: false;
+    in property <bool> is-running: false;
+    
+    callback clicked();
+    callback play-clicked();
+    callback settings-clicked();
+    
+    property <bool> is-hovered: touch.has-hover;
+    
+    height: 90px;
+    border-radius: 12px;
+    background: is-selected ? ThemeManager.colors.primary.with-alpha(0.08) :
+                is-hovered ? ThemeManager.colors.surface-hover : 
+                ThemeManager.colors.surface;
+    border-width: is-selected ? 2px : 1px;
+    border-color: is-selected ? ThemeManager.colors.primary :
+                  is-hovered ? ThemeManager.colors.border-hover : 
+                  ThemeManager.colors.border;
+    
+    animate background { duration: 150ms; }
+    animate border-color { duration: 150ms; }
+    
+    HorizontalLayout {
+        padding: 12px;
+        spacing: 12px;
+        
+        // Icon
+        Rectangle {
+            width: 64px;
+            height: 64px;
+            border-radius: 10px;
+            background: ThemeManager.colors.surface-hover;
+            clip: true;
+            
+            VerticalLayout {
+                Rectangle {
+                    vertical-stretch: 1;
+                    background: #7CB342;
+                    border-radius: 10px 10px 0 0;
+                }
+                Rectangle {
+                    vertical-stretch: 2;
+                    background: #8D6E63;
+                    border-radius: 0 0 10px 10px;
+                }
+            }
+            
+            if is-running: Rectangle {
+                x: parent.width - 12px;
+                y: parent.height - 12px;
+                width: 10px;
+                height: 10px;
+                border-radius: 5px;
+                background: ThemeManager.colors.success;
+                border-width: 2px;
+                border-color: ThemeManager.colors.surface;
+            }
+        }
+        
+        // Info
+        VerticalLayout {
+            horizontal-stretch: 1;
+            spacing: 4px;
+            alignment: center;
+            
+            Text {
+                text: name;
+                font-size: 15px;
+                font-weight: 600;
+                color: ThemeManager.colors.foreground;
+                overflow: elide;
+            }
+            
+            HorizontalLayout {
+                spacing: 8px;
+                
+                Rectangle {
+                    width: ver-text.preferred-width + 10px;
+                    height: 20px;
+                    border-radius: 4px;
+                    background: ThemeManager.colors.primary.with-alpha(0.1);
+                    
+                    ver-text := Text {
+                        text: version;
+                        font-size: 11px;
+                        font-weight: 500;
+                        color: ThemeManager.colors.primary;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                if loader != "": Rectangle {
+                    width: loader-text.preferred-width + 10px;
+                    height: 20px;
+                    border-radius: 4px;
+                    background: ThemeManager.colors.accent.with-alpha(0.1);
+                    
+                    loader-text := Text {
+                        text: loader;
+                        font-size: 11px;
+                        font-weight: 500;
+                        color: ThemeManager.colors.accent;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                if mod-count > 0: Text {
+                    text: mod-count + " mods";
+                    font-size: 11px;
+                    color: ThemeManager.colors.foreground-muted;
+                    vertical-alignment: center;
+                }
+            }
+            
+            Text {
+                text: is-running ? "Running..." : "Last played: " + last-played;
+                font-size: 11px;
+                color: is-running ? ThemeManager.colors.success : ThemeManager.colors.foreground-subtle;
+            }
+        }
+        
+        // Actions
+        VerticalLayout {
+            alignment: center;
+            spacing: 8px;
+            
+            Rectangle {
+                width: 36px;
+                height: 36px;
+                border-radius: 18px;
+                background: is-running ? ThemeManager.colors.error : ThemeManager.colors.primary;
+                
+                play-touch := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { play-clicked(); }
+                }
+                
+                Text {
+                    text: is-running ? "\u{f04d}" : "\u{25B6}";
+                    font-size: is-running ? 14px : 12px;
+                    color: white;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+            
+            Rectangle {
+                width: 28px;
+                height: 28px;
+                border-radius: 6px;
+                background: settings-touch.has-hover ? ThemeManager.colors.surface-active : transparent;
+                
+                settings-touch := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { settings-clicked(); }
+                }
+                
+                Text {
+                    text: "\u{f141}";
+                    font-size: 14px;
+                    color: ThemeManager.colors.foreground-muted;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+    
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MOD CARD - Mod Browser Display
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export component ModCard inherits Rectangle {
+    in property <string> name: "Mod Name";
+    in property <string> author: "Author";
+    in property <string> version: "1.0.0";
+    in property <string> description: "Mod description...";
+    in property <int> downloads: 0;
+    in property <bool> installed: false;
+    in property <bool> enabled: true;
+    
+    callback install-clicked();
+    callback toggle-clicked();
+    callback info-clicked();
+    
+    property <bool> is-hovered: touch.has-hover;
+    
+    height: 88px;
+    border-radius: 12px;
+    background: is-hovered ? ThemeManager.colors.surface-hover : ThemeManager.colors.surface;
+    border-width: 1px;
+    border-color: is-hovered ? ThemeManager.colors.border-hover : ThemeManager.colors.border;
+    
+    animate background { duration: 150ms; }
+    
+    HorizontalLayout {
+        padding: 12px;
+        spacing: 12px;
+        
+        // Icon
+        Rectangle {
+            width: 64px;
+            height: 64px;
+            border-radius: 10px;
+            background: ThemeManager.colors.primary.with-alpha(0.1);
+            
+            Text {
+                text: "\u{f12e}";
+                font-size: 24px;
+                color: ThemeManager.colors.primary;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+        
+        // Info
+        VerticalLayout {
+            horizontal-stretch: 1;
+            spacing: 4px;
+            
+            HorizontalLayout {
+                spacing: 8px;
+                
+                Text {
+                    text: name;
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: ThemeManager.colors.foreground;
+                }
+                
+                Text {
+                    text: "v" + version;
+                    font-size: 11px;
+                    color: ThemeManager.colors.foreground-subtle;
+                    vertical-alignment: center;
+                }
+            }
+            
+            Text {
+                text: "by " + author;
+                font-size: 12px;
+                color: ThemeManager.colors.foreground-muted;
+            }
+            
+            Text {
+                text: description;
+                font-size: 12px;
+                color: ThemeManager.colors.foreground-subtle;
+                overflow: elide;
+            }
+        }
+        
+        // Downloads
+        VerticalLayout {
+            alignment: center;
+            
+            Text {
+                text: downloads >= 1000000 ? (downloads / 1000000) + "M" :
+                      downloads >= 1000 ? (downloads / 1000) + "K" :
+                      downloads + "";
+                font-size: 12px;
+                color: ThemeManager.colors.foreground-muted;
+                horizontal-alignment: right;
+            }
+            
+            Text {
+                text: "downloads";
+                font-size: 10px;
+                color: ThemeManager.colors.foreground-subtle;
+                horizontal-alignment: right;
+            }
+        }
+        
+        // Actions
+        VerticalLayout {
+            alignment: center;
+            
+            if !installed: KonamiButton {
+                text: "Install";
+                variant: ButtonVariant.primary;
+                size: ButtonSize.sm;
+                clicked => { install-clicked(); }
+            }
+            
+            if installed: KonamiButton {
+                text: enabled ? "Enabled" : "Disabled";
+                variant: enabled ? ButtonVariant.secondary : ButtonVariant.ghost;
+                size: ButtonSize.sm;
+                clicked => { toggle-clicked(); }
+            }
+        }
+    }
+    
+    touch := TouchArea {
+        clicked => { info-clicked(); }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ACCOUNT CARD - Microsoft Account Display
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export component AccountCard inherits Rectangle {
+    in property <string> username: "Player";
+    in property <string> uuid: "";
+    in property <bool> active: false;
+    in property <bool> premium: true;
+    
+    callback select-clicked();
+    callback remove-clicked();
+    
+    property <bool> is-hovered: touch.has-hover;
+    
+    height: 72px;
+    border-radius: 12px;
+    background: active ? ThemeManager.colors.primary.with-alpha(0.1) :
+                is-hovered ? ThemeManager.colors.surface-hover : ThemeManager.colors.surface;
+    border-width: active ? 2px : 1px;
+    border-color: active ? ThemeManager.colors.primary : ThemeManager.colors.border;
+    
+    animate background { duration: 150ms; }
+    animate border-color { duration: 150ms; }
+    
+    HorizontalLayout {
+        padding: 12px;
+        spacing: 12px;
+        
+        // Avatar
+        Rectangle {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            background: ThemeManager.colors.primary.with-alpha(0.15);
+            
+            Text {
+                text: "\u{f2bd}";
+                font-size: 24px;
+                color: ThemeManager.colors.primary;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+        
+        VerticalLayout {
+            horizontal-stretch: 1;
+            spacing: 4px;
+            alignment: center;
+            
+            HorizontalLayout {
+                spacing: 8px;
+                
+                Text {
+                    text: username;
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: ThemeManager.colors.foreground;
+                }
+                
+                if premium: Rectangle {
+                    width: prem-text.preferred-width + 12px;
+                    height: 18px;
+                    border-radius: 9px;
+                    background: ThemeManager.colors.success.with-alpha(0.2);
+                    
+                    prem-text := Text {
+                        text: "Premium";
+                        font-size: 10px;
+                        font-weight: 600;
+                        color: ThemeManager.colors.success;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                if active: Rectangle {
+                    width: active-text.preferred-width + 12px;
+                    height: 18px;
+                    border-radius: 9px;
+                    background: ThemeManager.colors.primary.with-alpha(0.2);
+                    
+                    active-text := Text {
+                        text: "Active";
+                        font-size: 10px;
+                        font-weight: 600;
+                        color: ThemeManager.colors.primary;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+            
+            if uuid != "": Text {
+                text: uuid;
+                font-size: 10px;
+                color: ThemeManager.colors.foreground-subtle;
+            }
+        }
+        
+        // Remove button
+        Rectangle {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: remove-touch.has-hover ? ThemeManager.colors.error.with-alpha(0.15) : transparent;
+            
+            remove-touch := TouchArea {
+                mouse-cursor: pointer;
+                clicked => { remove-clicked(); }
+            }
+            
+            Text {
+                text: "\u{f00d}";
+                font-size: 14px;
+                color: remove-touch.has-hover ? ThemeManager.colors.error : ThemeManager.colors.foreground-muted;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+    }
+    
+    touch := TouchArea {
+        clicked => { select-clicked(); }
+    }
+}

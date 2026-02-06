@@ -1,0 +1,105 @@
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║                RETRO ARCADE THEME                                ║
+// ║  Pixel art vibes, neon CRT glow, 80s arcade nostalgia          ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+import { ColorPalette, Theme } from "base.slint";
+
+export global RetroArcadePalette {
+    out property <ColorPalette> colors: {
+        primary:            #ffdd57,
+        primary-hover:      #ffe680,
+        primary-active:     #f5c518,
+        primary-disabled:   #ffdd5760,
+        primary-foreground: #0d0d0d,
+        primary-glow:       #ffdd5760,
+
+        secondary:            #ff3860,
+        secondary-hover:      #ff6085,
+        secondary-active:     #e0224a,
+        secondary-foreground: #ffffff,
+
+        accent:            #00d1b2,
+        accent-hover:      #3de0cd,
+        accent-active:     #00b89c,
+        accent-foreground: #0d0d0d,
+        accent-glow:       #00d1b250,
+
+        background:          #0a0a0a,
+        background-alt:      #121212,
+        background-elevated: #1a1a2e,
+        background-sunken:   #050505,
+
+        surface:          #16213e,
+        surface-hover:    #1a2844,
+        surface-active:   #1f304a,
+        surface-elevated: #1a2844,
+        surface-overlay:  #0a0a0ae6,
+
+        text-primary:   #f0f0f0,
+        text-secondary: #b0b0b0,
+        text-tertiary:  #808080,
+        text-disabled:  #404040,
+        text-inverse:   #0d0d0d,
+        text-link:      #ffdd57,
+        text-link-hover:#ffe680,
+
+        success:            #48c774,
+        success-hover:      #6bd691,
+        success-bg:         #48c77420,
+        success-foreground: #0d0d0d,
+
+        warning:            #ff9f43,
+        warning-hover:      #ffb16e,
+        warning-bg:         #ff9f4320,
+        warning-foreground: #0d0d0d,
+
+        error:            #ff3860,
+        error-hover:      #ff6085,
+        error-bg:         #ff386020,
+        error-foreground: #ffffff,
+
+        info:            #3298dc,
+        info-hover:      #5aade3,
+        info-bg:         #3298dc20,
+        info-foreground: #ffffff,
+
+        border:         #ffdd5730,
+        border-hover:   #ffdd5750,
+        border-focus:   #ffdd57,
+        border-active:  #ffdd57,
+        border-error:   #ff3860,
+        border-success: #48c774,
+
+        focus-ring:           #ffdd5760,
+        selection:            #ffdd5730,
+        selection-foreground: #f0f0f0,
+        highlight:            #ff386030,
+
+        shadow-color: #000000a0,
+        glow-color:   #ffdd5740,
+        overlay:      #0a0a0a80,
+        backdrop:     #0a0a0acc,
+
+        gradient-start: #ffdd57,
+        gradient-mid:   #ff3860,
+        gradient-end:   #00d1b2,
+
+        scrollbar-track:       #0a0a0a,
+        scrollbar-thumb:       #ffdd5730,
+        scrollbar-thumb-hover: #ffdd5750,
+
+        tooltip-bg:   #16213eee,
+        tooltip-text: #f0f0f0,
+
+        skeleton-base:  #16213e,
+        skeleton-shine: #1a2844,
+
+        code-bg:      #0a0a0a,
+        code-text:    #f0f0f0,
+        code-keyword: #ffdd57,
+        code-string:  #48c774,
+        code-number:  #ff3860,
+        code-comment: #808080,
+    };
+}

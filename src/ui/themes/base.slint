@@ -1,0 +1,640 @@
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║                         KONAMI CLIENT - BASE THEME SYSTEM                    ║
+// ║                                                                               ║
+// ║  A sophisticated theming architecture with design tokens, fluid animations,  ║
+// ║  and premium visual effects inspired by modern design systems.               ║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DESIGN TOKENS - Color Palette Structure
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Complete color palette for a theme
+export struct ColorPalette {
+    // ─────────────────────────────────────────────────────────────────────────
+    // Brand Colors
+    // ─────────────────────────────────────────────────────────────────────────
+    primary: color,
+    primary-hover: color,
+    primary-active: color,
+    primary-disabled: color,
+    primary-foreground: color,
+    primary-glow: color,
+    
+    secondary: color,
+    secondary-hover: color,
+    secondary-active: color,
+    secondary-foreground: color,
+    
+    accent: color,
+    accent-hover: color,
+    accent-active: color,
+    accent-foreground: color,
+    accent-glow: color,
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // Neutral Colors
+    // ─────────────────────────────────────────────────────────────────────────
+    background: color,
+    background-alt: color,
+    background-elevated: color,
+    background-sunken: color,
+    
+    surface: color,
+    surface-hover: color,
+    surface-active: color,
+    surface-elevated: color,
+    surface-overlay: color,
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // Text Colors
+    // ─────────────────────────────────────────────────────────────────────────
+    text-primary: color,
+    text-secondary: color,
+    text-tertiary: color,
+    text-disabled: color,
+    text-inverse: color,
+    text-link: color,
+    text-link-hover: color,
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // Semantic Colors
+    // ─────────────────────────────────────────────────────────────────────────
+    success: color,
+    success-hover: color,
+    success-bg: color,
+    success-foreground: color,
+    
+    warning: color,
+    warning-hover: color,
+    warning-bg: color,
+    warning-foreground: color,
+    
+    error: color,
+    error-hover: color,
+    error-bg: color,
+    error-foreground: color,
+    
+    info: color,
+    info-hover: color,
+    info-bg: color,
+    info-foreground: color,
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // Border Colors
+    // ─────────────────────────────────────────────────────────────────────────
+    border: color,
+    border-hover: color,
+    border-focus: color,
+    border-active: color,
+    border-error: color,
+    border-success: color,
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // Interactive States
+    // ─────────────────────────────────────────────────────────────────────────
+    focus-ring: color,
+    selection: color,
+    selection-foreground: color,
+    highlight: color,
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // Effects
+    // ─────────────────────────────────────────────────────────────────────────
+    shadow-color: color,
+    glow-color: color,
+    overlay: color,
+    backdrop: color,
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // Gradients (stored as colors, combined in UI)
+    // ─────────────────────────────────────────────────────────────────────────
+    gradient-start: color,
+    gradient-mid: color,
+    gradient-end: color,
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // Special UI Elements
+    // ─────────────────────────────────────────────────────────────────────────
+    scrollbar-track: color,
+    scrollbar-thumb: color,
+    scrollbar-thumb-hover: color,
+    
+    tooltip-bg: color,
+    tooltip-text: color,
+    
+    skeleton-base: color,
+    skeleton-shine: color,
+    
+    code-bg: color,
+    code-text: color,
+    code-keyword: color,
+    code-string: color,
+    code-number: color,
+    code-comment: color,
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TYPOGRAPHY SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export struct TypographyScale {
+    // Font Families
+    font-sans: string,
+    font-serif: string,
+    font-mono: string,
+    font-display: string,
+    
+    // Font Sizes (in px for precision)
+    size-2xs: length,      // 10px - tiny labels
+    size-xs: length,       // 11px - small labels
+    size-sm: length,       // 12px - captions
+    size-base: length,     // 14px - body text
+    size-md: length,       // 15px - enhanced body
+    size-lg: length,       // 16px - large body
+    size-xl: length,       // 18px - subheadings
+    size-2xl: length,      // 20px - section titles
+    size-3xl: length,      // 24px - page titles
+    size-4xl: length,      // 30px - hero text
+    size-5xl: length,      // 36px - display
+    size-6xl: length,      // 48px - large display
+    size-7xl: length,      // 60px - massive
+    
+    // Font Weights
+    weight-thin: int,      // 100
+    weight-light: int,     // 300
+    weight-normal: int,    // 400
+    weight-medium: int,    // 500
+    weight-semibold: int,  // 600
+    weight-bold: int,      // 700
+    weight-extrabold: int, // 800
+    weight-black: int,     // 900
+    
+    // Line Heights
+    leading-none: float,    // 1.0
+    leading-tight: float,   // 1.25
+    leading-snug: float,    // 1.375
+    leading-normal: float,  // 1.5
+    leading-relaxed: float, // 1.625
+    leading-loose: float,   // 2.0
+    
+    // Letter Spacing
+    tracking-tighter: length, // -0.05em
+    tracking-tight: length,   // -0.025em
+    tracking-normal: length,  // 0
+    tracking-wide: length,    // 0.025em
+    tracking-wider: length,   // 0.05em
+    tracking-widest: length,  // 0.1em
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SPACING SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export struct SpacingScale {
+    px: length,    // 1px
+    0-5: length,   // 2px
+    1: length,     // 4px
+    1-5: length,   // 6px
+    2: length,     // 8px
+    2-5: length,   // 10px
+    3: length,     // 12px
+    3-5: length,   // 14px
+    4: length,     // 16px
+    5: length,     // 20px
+    6: length,     // 24px
+    7: length,     // 28px
+    8: length,     // 32px
+    9: length,     // 36px
+    10: length,    // 40px
+    11: length,    // 44px
+    12: length,    // 48px
+    14: length,    // 56px
+    16: length,    // 64px
+    20: length,    // 80px
+    24: length,    // 96px
+    28: length,    // 112px
+    32: length,    // 128px
+    36: length,    // 144px
+    40: length,    // 160px
+    44: length,    // 176px
+    48: length,    // 192px
+    52: length,    // 208px
+    56: length,    // 224px
+    60: length,    // 240px
+    64: length,    // 256px
+    72: length,    // 288px
+    80: length,    // 320px
+    96: length,    // 384px
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BORDER RADIUS SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export struct RadiusScale {
+    none: length,   // 0px
+    xs: length,     // 2px
+    sm: length,     // 4px
+    md: length,     // 6px
+    default: length, // 8px
+    lg: length,     // 12px
+    xl: length,     // 16px
+    2xl: length,    // 20px
+    3xl: length,    // 24px
+    4xl: length,    // 32px
+    full: length,   // 9999px
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SHADOW SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export struct ShadowPreset {
+    x: length,
+    y: length,
+    blur: length,
+    spread: length,
+    color: color,
+}
+
+export struct ShadowScale {
+    // Elevation shadows
+    sm: ShadowPreset,
+    default: ShadowPreset,
+    md: ShadowPreset,
+    lg: ShadowPreset,
+    xl: ShadowPreset,
+    2xl: ShadowPreset,
+    
+    // Glow effects
+    glow-sm: ShadowPreset,
+    glow-md: ShadowPreset,
+    glow-lg: ShadowPreset,
+    
+    // Inset shadows
+    inner: ShadowPreset,
+    inner-lg: ShadowPreset,
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ANIMATION SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export struct AnimationConfig {
+    // Durations
+    instant: duration,     // 0ms
+    fastest: duration,     // 50ms
+    faster: duration,      // 100ms
+    fast: duration,        // 150ms
+    normal: duration,      // 200ms
+    slow: duration,        // 300ms
+    slower: duration,      // 400ms
+    slowest: duration,     // 500ms
+    lazy: duration,        // 700ms
+    glacial: duration,     // 1000ms
+    
+    // Easings
+    linear: easing,
+    ease: easing,
+    ease-in: easing,
+    ease-out: easing,
+    ease-in-out: easing,
+    
+    // Custom springs
+    spring: easing,
+    bounce: easing,
+    elastic: easing,
+    
+    // UI-specific
+    enter: easing,
+    exit: easing,
+    emphasis: easing,
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BREAKPOINTS (for responsive design)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export struct Breakpoints {
+    xs: length,   // 480px
+    sm: length,   // 640px
+    md: length,   // 768px
+    lg: length,   // 1024px
+    xl: length,   // 1280px
+    2xl: length,  // 1536px
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Z-INDEX SCALE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export struct ZIndexScale {
+    hide: int,        // -1
+    base: int,        // 0
+    raised: int,      // 1
+    dropdown: int,    // 1000
+    sticky: int,      // 1100
+    banner: int,      // 1200
+    overlay: int,     // 1300
+    modal: int,       // 1400
+    popover: int,     // 1500
+    toast: int,       // 1600
+    tooltip: int,     // 1700
+    debug: int,       // 9999
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// COMPLETE THEME STRUCTURE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export struct ThemeDefinition {
+    // Metadata
+    id: string,
+    name: string,
+    description: string,
+    author: string,
+    version: string,
+    is-dark: bool,
+    
+    // Design Tokens
+    colors: ColorPalette,
+    typography: TypographyScale,
+    spacing: SpacingScale,
+    radius: RadiusScale,
+    shadows: ShadowScale,
+    animation: AnimationConfig,
+    breakpoints: Breakpoints,
+    z-index: ZIndexScale,
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DEFAULT DESIGN TOKENS (shared across themes)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export global DefaultTokens {
+    // Typography defaults
+    out property <TypographyScale> typography: {
+        font-sans: "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+        font-serif: "Georgia, Cambria, Times New Roman, Times, serif",
+        font-mono: "JetBrains Mono, Fira Code, SF Mono, Menlo, monospace",
+        font-display: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+        
+        size-2xs: 10px,
+        size-xs: 11px,
+        size-sm: 12px,
+        size-base: 14px,
+        size-md: 15px,
+        size-lg: 16px,
+        size-xl: 18px,
+        size-2xl: 20px,
+        size-3xl: 24px,
+        size-4xl: 30px,
+        size-5xl: 36px,
+        size-6xl: 48px,
+        size-7xl: 60px,
+        
+        weight-thin: 100,
+        weight-light: 300,
+        weight-normal: 400,
+        weight-medium: 500,
+        weight-semibold: 600,
+        weight-bold: 700,
+        weight-extrabold: 800,
+        weight-black: 900,
+        
+        leading-none: 1.0,
+        leading-tight: 1.25,
+        leading-snug: 1.375,
+        leading-normal: 1.5,
+        leading-relaxed: 1.625,
+        leading-loose: 2.0,
+        
+        tracking-tighter: -0.8px,
+        tracking-tight: -0.4px,
+        tracking-normal: 0px,
+        tracking-wide: 0.4px,
+        tracking-wider: 0.8px,
+        tracking-widest: 1.6px,
+    };
+    
+    // Spacing defaults
+    out property <SpacingScale> spacing: {
+        px: 1px,
+        0-5: 2px,
+        1: 4px,
+        1-5: 6px,
+        2: 8px,
+        2-5: 10px,
+        3: 12px,
+        3-5: 14px,
+        4: 16px,
+        5: 20px,
+        6: 24px,
+        7: 28px,
+        8: 32px,
+        9: 36px,
+        10: 40px,
+        11: 44px,
+        12: 48px,
+        14: 56px,
+        16: 64px,
+        20: 80px,
+        24: 96px,
+        28: 112px,
+        32: 128px,
+        36: 144px,
+        40: 160px,
+        44: 176px,
+        48: 192px,
+        52: 208px,
+        56: 224px,
+        60: 240px,
+        64: 256px,
+        72: 288px,
+        80: 320px,
+        96: 384px,
+    };
+    
+    // Radius defaults
+    out property <RadiusScale> radius: {
+        none: 0px,
+        xs: 2px,
+        sm: 4px,
+        md: 6px,
+        default: 8px,
+        lg: 12px,
+        xl: 16px,
+        2xl: 20px,
+        3xl: 24px,
+        4xl: 32px,
+        full: 9999px,
+    };
+    
+    // Animation defaults
+    out property <AnimationConfig> animation: {
+        instant: 0ms,
+        fastest: 50ms,
+        faster: 100ms,
+        fast: 150ms,
+        normal: 200ms,
+        slow: 300ms,
+        slower: 400ms,
+        slowest: 500ms,
+        lazy: 700ms,
+        glacial: 1000ms,
+        
+        linear: linear,
+        ease: ease,
+        ease-in: ease-in,
+        ease-out: ease-out,
+        ease-in-out: ease-in-out,
+        
+        spring: cubic-bezier(0.175, 0.885, 0.32, 1.275),
+        bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55),
+        elastic: cubic-bezier(0.68, -0.6, 0.32, 1.6),
+        
+        enter: cubic-bezier(0.0, 0.0, 0.2, 1.0),
+        exit: cubic-bezier(0.4, 0.0, 1.0, 1.0),
+        emphasis: cubic-bezier(0.4, 0.0, 0.2, 1.0),
+    };
+    
+    // Breakpoints
+    out property <Breakpoints> breakpoints: {
+        xs: 480px,
+        sm: 640px,
+        md: 768px,
+        lg: 1024px,
+        xl: 1280px,
+        2xl: 1536px,
+    };
+    
+    // Z-index scale
+    out property <ZIndexScale> z-index: {
+        hide: -1,
+        base: 0,
+        raised: 1,
+        dropdown: 1000,
+        sticky: 1100,
+        banner: 1200,
+        overlay: 1300,
+        modal: 1400,
+        popover: 1500,
+        toast: 1600,
+        tooltip: 1700,
+        debug: 9999,
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// THEME MANAGER - Global state for active theme
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export global Theme {
+    // Current theme index: 0=Cyberpunk, 1=Glassmorphism, 2=Aurora, 3=Material, 4=Nord, 5=Dracula, 6=Retro
+    in-out property <int> active-theme-index: 0;
+    
+    // Theme count for cycling
+    out property <int> theme-count: 7;
+    
+    // Theme names for display
+    out property <[string]> theme-names: [
+        "Cyberpunk Neon",
+        "Glassmorphism",
+        "Aurora Borealis",
+        "Material You",
+        "Nord",
+        "Dracula",
+        "Retro Arcade"
+    ];
+    
+    // Active color palette (will be set by theme-specific globals)
+    in-out property <ColorPalette> colors;
+    
+    // Shared tokens (same across all themes)
+    out property <TypographyScale> typography: DefaultTokens.typography;
+    out property <SpacingScale> spacing: DefaultTokens.spacing;
+    out property <RadiusScale> radius: DefaultTokens.radius;
+    out property <AnimationConfig> animation: DefaultTokens.animation;
+    out property <Breakpoints> breakpoints: DefaultTokens.breakpoints;
+    out property <ZIndexScale> z-index: DefaultTokens.z-index;
+    
+    // Theme metadata
+    out property <bool> is-dark-mode: true;
+    out property <string> current-theme-name: theme-names[active-theme-index];
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // Quick access properties (most commonly used)
+    // ─────────────────────────────────────────────────────────────────────────
+    
+    // Primary shortcuts
+    out property <color> primary: colors.primary;
+    out property <color> primary-hover: colors.primary-hover;
+    out property <color> primary-fg: colors.primary-foreground;
+    
+    // Background shortcuts
+    out property <color> bg: colors.background;
+    out property <color> bg-alt: colors.background-alt;
+    out property <color> surface: colors.surface;
+    out property <color> surface-hover: colors.surface-hover;
+    
+    // Text shortcuts
+    out property <color> text: colors.text-primary;
+    out property <color> text-muted: colors.text-secondary;
+    out property <color> text-subtle: colors.text-tertiary;
+    
+    // Semantic shortcuts
+    out property <color> success: colors.success;
+    out property <color> warning: colors.warning;
+    out property <color> error: colors.error;
+    out property <color> info: colors.info;
+    
+    // Border shortcuts
+    out property <color> border: colors.border;
+    out property <color> border-focus: colors.border-focus;
+    
+    // Effect shortcuts
+    out property <color> glow: colors.glow-color;
+    out property <color> shadow: colors.shadow-color;
+    out property <color> overlay: colors.overlay;
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // Theme Actions
+    // ─────────────────────────────────────────────────────────────────────────
+    
+    public function set-theme(index: int) {
+        active-theme-index = clamp(index, 0, theme-count - 1);
+    }
+    
+    public function next-theme() {
+        active-theme-index = mod(active-theme-index + 1, theme-count);
+    }
+    
+    public function prev-theme() {
+        active-theme-index = mod(active-theme-index - 1 + theme-count, theme-count);
+    }
+    
+    public function toggle-dark-mode() {
+        // For themes that support light/dark variants
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// UTILITY FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Alpha modification helper (use in components)
+// Example: background: Theme.primary.with-alpha(0.5);
+
+// Responsive spacing helper
+export global ResponsiveHelpers {
+    // Fluid spacing between min and max based on viewport
+    public pure function fluid-space(min: length, max: length, viewport: length) -> length {
+        return clamp(min, min + (max - min) * (viewport - 320px) / (1536px - 320px), max);
+    }
+    
+    // Clamp text size between bounds
+    public pure function fluid-text(min: length, max: length, viewport: length) -> length {
+        return clamp(min, min + (max - min) * (viewport - 320px) / (1536px - 320px), max);
+    }
+}

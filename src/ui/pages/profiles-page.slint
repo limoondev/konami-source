@@ -1,0 +1,718 @@
+// Konami Client - Profiles Page
+// Profile management with modpack creation and import/export
+
+import { Theme, KonamiTheme } from "../theme/theme.slint";
+import { KonamiCard, GlassCard, ProfileCard } from "../components/card.slint";
+import { KonamiButton, IconButton } from "../components/button.slint";
+import { KonamiInput, SearchInput } from "../components/input.slint";
+
+export struct ProfileInfo {
+    id: string,
+    name: string,
+    game-version: string,
+    loader: string,
+    loader-version: string,
+    icon: string,
+    last-played: string,
+    total-playtime: string,
+    mod-count: int,
+    is-favorite: bool,
+    created-at: string,
+}
+
+export component ProfilesPage inherits Rectangle {
+    in property <[ProfileInfo]> profiles;
+    in property <string> selected-profile-id;
+    in property <bool> is-creating;
+    
+    callback select-profile(string);
+    callback create-profile();
+    callback duplicate-profile(string);
+    callback delete-profile(string);
+    callback export-profile(string);
+    callback import-profile();
+    callback toggle-favorite(string);
+    callback edit-profile(string);
+    
+    background: Theme.background;
+    
+    VerticalLayout {
+        padding: 24px;
+        spacing: 20px;
+        
+        // Header
+        HorizontalLayout {
+            alignment: space-between;
+            
+            VerticalLayout {
+                spacing: 4px;
+                
+                Text {
+                    text: "Profiles";
+                    font-size: 28px;
+                    font-weight: 700;
+                    color: Theme.text-primary;
+                }
+                
+                Text {
+                    text: profiles.length + " profiles";
+                    font-size: 14px;
+                    color: Theme.text-secondary;
+                }
+            }
+            
+            HorizontalLayout {
+                spacing: 12px;
+                
+                // Import button
+                Rectangle {
+                    width: 120px;
+                    height: 40px;
+                    border-radius: 8px;
+                    background: import-touch.has-hover ? Theme.surface-variant : Theme.surface;
+                    border-width: 1px;
+                    border-color: Theme.border;
+                    
+                    animate background { duration: 150ms; }
+                    
+                    import-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { import-profile(); }
+                    }
+                    
+                    HorizontalLayout {
+                        alignment: center;
+                        spacing: 8px;
+                        
+                        Text {
+                            text: "\u{f56f}";
+                            font-size: 14px;
+                            color: Theme.text-secondary;
+                            vertical-alignment: center;
+                        }
+                        
+                        Text {
+                            text: "Import";
+                            font-size: 14px;
+                            font-weight: 500;
+                            color: Theme.text-primary;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+                
+                // Create button
+                Rectangle {
+                    width: 140px;
+                    height: 40px;
+                    border-radius: 8px;
+                    background: create-touch.has-hover ? Theme.primary-hover : Theme.primary;
+                    
+                    animate background { duration: 150ms; }
+                    
+                    create-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { create-profile(); }
+                    }
+                    
+                    HorizontalLayout {
+                        alignment: center;
+                        spacing: 8px;
+                        
+                        Text {
+                            text: "\u{f067}";
+                            font-size: 14px;
+                            color: Theme.text-on-primary;
+                            vertical-alignment: center;
+                        }
+                        
+                        Text {
+                            text: "New Profile";
+                            font-size: 14px;
+                            font-weight: 500;
+                            color: Theme.text-on-primary;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Search and filter
+        HorizontalLayout {
+            spacing: 12px;
+            
+            SearchInput {
+                horizontal-stretch: 1;
+                placeholder: "Search profiles...";
+            }
+            
+            // Filter buttons
+            Rectangle {
+                width: 100px;
+                height: 40px;
+                border-radius: 8px;
+                background: Theme.surface;
+                border-width: 1px;
+                border-color: Theme.border;
+                
+                HorizontalLayout {
+                    padding-left: 12px;
+                    padding-right: 12px;
+                    alignment: space-between;
+                    
+                    Text {
+                        text: "All";
+                        font-size: 13px;
+                        color: Theme.text-primary;
+                        vertical-alignment: center;
+                    }
+                    
+                    Text {
+                        text: "\u{f107}";
+                        font-size: 12px;
+                        color: Theme.text-tertiary;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+            
+            // Sort button
+            Rectangle {
+                width: 120px;
+                height: 40px;
+                border-radius: 8px;
+                background: Theme.surface;
+                border-width: 1px;
+                border-color: Theme.border;
+                
+                HorizontalLayout {
+                    padding-left: 12px;
+                    padding-right: 12px;
+                    alignment: space-between;
+                    
+                    Text {
+                        text: "Last Played";
+                        font-size: 13px;
+                        color: Theme.text-primary;
+                        vertical-alignment: center;
+                    }
+                    
+                    Text {
+                        text: "\u{f107}";
+                        font-size: 12px;
+                        color: Theme.text-tertiary;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+        
+        // Profiles grid
+        Flickable {
+            vertical-stretch: 1;
+            viewport-height: profiles-grid.preferred-height;
+            
+            profiles-grid := VerticalLayout {
+                spacing: 12px;
+                
+                // Favorites section
+                if profiles.length > 0: VerticalLayout {
+                    spacing: 12px;
+                    
+                    Text {
+                        text: "Favorites";
+                        font-size: 16px;
+                        font-weight: 600;
+                        color: Theme.text-primary;
+                    }
+                    
+                    HorizontalLayout {
+                        spacing: 16px;
+                        
+                        for profile in profiles: ProfileGridItem {
+                            visible: profile.is-favorite;
+                            profile-info: profile;
+                            is-selected: profile.id == selected-profile-id;
+                            select-clicked => { select-profile(profile.id); }
+                            edit-clicked => { edit-profile(profile.id); }
+                            duplicate-clicked => { duplicate-profile(profile.id); }
+                            delete-clicked => { delete-profile(profile.id); }
+                            export-clicked => { export-profile(profile.id); }
+                            favorite-clicked => { toggle-favorite(profile.id); }
+                        }
+                    }
+                }
+                
+                // All profiles section
+                Text {
+                    text: "All Profiles";
+                    font-size: 16px;
+                    font-weight: 600;
+                    color: Theme.text-primary;
+                }
+                
+                // Grid wrapper
+                Rectangle {
+                    VerticalLayout {
+                        spacing: 16px;
+                        
+                        for profile in profiles: ProfileGridItem {
+                            profile-info: profile;
+                            is-selected: profile.id == selected-profile-id;
+                            select-clicked => { select-profile(profile.id); }
+                            edit-clicked => { edit-profile(profile.id); }
+                            duplicate-clicked => { duplicate-profile(profile.id); }
+                            delete-clicked => { delete-profile(profile.id); }
+                            export-clicked => { export-profile(profile.id); }
+                            favorite-clicked => { toggle-favorite(profile.id); }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Profile grid item
+component ProfileGridItem inherits Rectangle {
+    in property <ProfileInfo> profile-info;
+    in property <bool> is-selected;
+    
+    callback select-clicked();
+    callback edit-clicked();
+    callback duplicate-clicked();
+    callback delete-clicked();
+    callback export-clicked();
+    callback favorite-clicked();
+    
+    height: 160px;
+    border-radius: 16px;
+    background: Theme.surface;
+    border-width: is-selected ? 2px : 1px;
+    border-color: is-selected ? Theme.primary : 
+                  touch.has-hover ? Theme.primary.with-alpha(0.3) : Theme.border;
+    
+    animate border-color { duration: 200ms; }
+    animate border-width { duration: 200ms; }
+    
+    // Glow effect when selected
+    drop-shadow-blur: is-selected ? 20px : 0px;
+    drop-shadow-color: Theme.primary.with-alpha(0.2);
+    drop-shadow-offset-y: 0px;
+    
+    animate drop-shadow-blur { duration: 300ms; }
+    
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { select-clicked(); }
+    }
+    
+    VerticalLayout {
+        padding: 16px;
+        spacing: 12px;
+        
+        // Top row with icon and actions
+        HorizontalLayout {
+            alignment: space-between;
+            
+            // Profile icon
+            Rectangle {
+                width: 56px;
+                height: 56px;
+                border-radius: 12px;
+                background: @linear-gradient(135deg, Theme.primary.with-alpha(0.2), Theme.accent.with-alpha(0.2));
+                
+                Text {
+                    text: profile-info.icon != "" ? profile-info.icon : "\u{f11b}";
+                    font-size: 28px;
+                    color: Theme.primary;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+            
+            // Actions
+            HorizontalLayout {
+                spacing: 4px;
+                
+                // Favorite button
+                Rectangle {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 6px;
+                    background: fav-touch.has-hover ? Theme.surface-variant : transparent;
+                    
+                    animate background { duration: 150ms; }
+                    
+                    fav-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { favorite-clicked(); }
+                    }
+                    
+                    Text {
+                        text: profile-info.is-favorite ? "\u{f005}" : "\u{f006}";
+                        font-size: 14px;
+                        color: profile-info.is-favorite ? #fbbf24 : Theme.text-tertiary;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                // More actions button
+                Rectangle {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 6px;
+                    background: more-touch.has-hover ? Theme.surface-variant : transparent;
+                    
+                    animate background { duration: 150ms; }
+                    
+                    more-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        // Would open context menu
+                    }
+                    
+                    Text {
+                        text: "\u{f142}";
+                        font-size: 14px;
+                        color: Theme.text-tertiary;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+        
+        // Profile info
+        VerticalLayout {
+            spacing: 4px;
+            
+            Text {
+                text: profile-info.name;
+                font-size: 16px;
+                font-weight: 600;
+                color: Theme.text-primary;
+                overflow: elide;
+            }
+            
+            HorizontalLayout {
+                spacing: 8px;
+                
+                // Version badge
+                Rectangle {
+                    width: version-text.preferred-width + 12px;
+                    height: 20px;
+                    border-radius: 4px;
+                    background: Theme.primary.with-alpha(0.15);
+                    
+                    version-text := Text {
+                        text: profile-info.game-version;
+                        font-size: 11px;
+                        font-weight: 500;
+                        color: Theme.primary;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                // Loader badge
+                if profile-info.loader != "": Rectangle {
+                    width: loader-text.preferred-width + 12px;
+                    height: 20px;
+                    border-radius: 4px;
+                    background: Theme.accent.with-alpha(0.15);
+                    
+                    loader-text := Text {
+                        text: profile-info.loader;
+                        font-size: 11px;
+                        font-weight: 500;
+                        color: Theme.accent;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+        
+        Rectangle { vertical-stretch: 1; }
+        
+        // Stats row
+        HorizontalLayout {
+            spacing: 16px;
+            
+            HorizontalLayout {
+                spacing: 4px;
+                
+                Text {
+                    text: "\u{f12e}";
+                    font-size: 11px;
+                    color: Theme.text-tertiary;
+                    vertical-alignment: center;
+                }
+                
+                Text {
+                    text: profile-info.mod-count + " mods";
+                    font-size: 11px;
+                    color: Theme.text-tertiary;
+                    vertical-alignment: center;
+                }
+            }
+            
+            HorizontalLayout {
+                spacing: 4px;
+                
+                Text {
+                    text: "\u{f017}";
+                    font-size: 11px;
+                    color: Theme.text-tertiary;
+                    vertical-alignment: center;
+                }
+                
+                Text {
+                    text: profile-info.total-playtime;
+                    font-size: 11px;
+                    color: Theme.text-tertiary;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+    
+    // Selected indicator
+    if is-selected: Rectangle {
+        x: parent.width - 28px;
+        y: parent.height - 28px;
+        width: 24px;
+        height: 24px;
+        border-radius: 12px;
+        background: Theme.primary;
+        
+        Text {
+            text: "\u{f00c}";
+            font-size: 12px;
+            color: Theme.text-on-primary;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+}
+
+// Profile creation dialog
+export component CreateProfileDialog inherits Rectangle {
+    in property <bool> visible;
+    in property <[string]> available-versions;
+    in property <[string]> available-loaders;
+    
+    in-out property <string> profile-name;
+    in-out property <string> selected-version;
+    in-out property <string> selected-loader;
+    
+    callback create();
+    callback cancel();
+    
+    background: #000000.with-alpha(0.7);
+    
+    // Center dialog
+    Rectangle {
+        x: (parent.width - 480px) / 2;
+        y: (parent.height - 400px) / 2;
+        width: 480px;
+        height: 400px;
+        border-radius: 16px;
+        background: Theme.surface;
+        border-width: 1px;
+        border-color: Theme.border;
+        
+        VerticalLayout {
+            padding: 24px;
+            spacing: 20px;
+            
+            // Header
+            HorizontalLayout {
+                alignment: space-between;
+                
+                Text {
+                    text: "Create New Profile";
+                    font-size: 20px;
+                    font-weight: 700;
+                    color: Theme.text-primary;
+                }
+                
+                Rectangle {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 6px;
+                    background: close-touch.has-hover ? Theme.surface-variant : transparent;
+                    
+                    close-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { cancel(); }
+                    }
+                    
+                    Text {
+                        text: "\u{f00d}";
+                        font-size: 16px;
+                        color: Theme.text-secondary;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+            
+            // Form
+            VerticalLayout {
+                spacing: 16px;
+                
+                // Name input
+                VerticalLayout {
+                    spacing: 6px;
+                    
+                    Text {
+                        text: "Profile Name";
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: Theme.text-secondary;
+                    }
+                    
+                    KonamiInput {
+                        placeholder: "My Awesome Profile";
+                        text <=> profile-name;
+                    }
+                }
+                
+                // Version selector
+                VerticalLayout {
+                    spacing: 6px;
+                    
+                    Text {
+                        text: "Minecraft Version";
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: Theme.text-secondary;
+                    }
+                    
+                    Rectangle {
+                        height: 44px;
+                        border-radius: 8px;
+                        background: Theme.surface-variant;
+                        border-width: 1px;
+                        border-color: Theme.border;
+                        
+                        HorizontalLayout {
+                            padding-left: 14px;
+                            padding-right: 14px;
+                            alignment: space-between;
+                            
+                            Text {
+                                text: selected-version != "" ? selected-version : "Select version...";
+                                font-size: 14px;
+                                color: selected-version != "" ? Theme.text-primary : Theme.text-tertiary;
+                                vertical-alignment: center;
+                            }
+                            
+                            Text {
+                                text: "\u{f107}";
+                                font-size: 14px;
+                                color: Theme.text-tertiary;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+                
+                // Loader selector
+                VerticalLayout {
+                    spacing: 6px;
+                    
+                    Text {
+                        text: "Mod Loader (Optional)";
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: Theme.text-secondary;
+                    }
+                    
+                    HorizontalLayout {
+                        spacing: 10px;
+                        
+                        LoaderOption {
+                            name: "Vanilla";
+                            is-selected: selected-loader == "" || selected-loader == "vanilla";
+                            clicked => { selected-loader = "vanilla"; }
+                        }
+                        
+                        LoaderOption {
+                            name: "Fabric";
+                            is-selected: selected-loader == "fabric";
+                            clicked => { selected-loader = "fabric"; }
+                        }
+                        
+                        LoaderOption {
+                            name: "Forge";
+                            is-selected: selected-loader == "forge";
+                            clicked => { selected-loader = "forge"; }
+                        }
+                        
+                        LoaderOption {
+                            name: "Quilt";
+                            is-selected: selected-loader == "quilt";
+                            clicked => { selected-loader = "quilt"; }
+                        }
+                    }
+                }
+            }
+            
+            Rectangle { vertical-stretch: 1; }
+            
+            // Actions
+            HorizontalLayout {
+                alignment: end;
+                spacing: 12px;
+                
+                KonamiButton {
+                    text: "Cancel";
+                    variant: "secondary";
+                    clicked => { cancel(); }
+                }
+                
+                KonamiButton {
+                    text: "Create Profile";
+                    variant: "primary";
+                    clicked => { create(); }
+                }
+            }
+        }
+    }
+}
+
+// Loader option button
+component LoaderOption inherits Rectangle {
+    in property <string> name;
+    in property <bool> is-selected;
+    
+    callback clicked();
+    
+    width: 80px;
+    height: 36px;
+    border-radius: 8px;
+    background: is-selected ? Theme.primary : Theme.surface-variant;
+    border-width: 1px;
+    border-color: is-selected ? Theme.primary : Theme.border;
+    
+    animate background { duration: 150ms; }
+    animate border-color { duration: 150ms; }
+    
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+    
+    Text {
+        text: name;
+        font-size: 13px;
+        font-weight: is-selected ? 500 : 400;
+        color: is-selected ? Theme.text-on-primary : Theme.text-primary;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+}

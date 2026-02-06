@@ -1,0 +1,105 @@
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║                MATERIAL YOU THEME                                ║
+// ║  Google Material Design 3 inspired with dynamic color           ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+import { ColorPalette, Theme } from "base.slint";
+
+export global MaterialPalette {
+    out property <ColorPalette> colors: {
+        primary:            #d0bcff,
+        primary-hover:      #e8deff,
+        primary-active:     #b69df8,
+        primary-disabled:   #d0bcff60,
+        primary-foreground: #381e72,
+        primary-glow:       #d0bcff30,
+
+        secondary:            #ccc2dc,
+        secondary-hover:      #e8def8,
+        secondary-active:     #b0a7c0,
+        secondary-foreground: #332d41,
+
+        accent:            #efb8c8,
+        accent-hover:      #ffd8e4,
+        accent-active:     #d69fb0,
+        accent-foreground: #492532,
+        accent-glow:       #efb8c830,
+
+        background:          #1c1b1f,
+        background-alt:      #211f26,
+        background-elevated: #2b2930,
+        background-sunken:   #141316,
+
+        surface:          #1c1b1f,
+        surface-hover:    #2b2930,
+        surface-active:   #36343b,
+        surface-elevated: #2b2930,
+        surface-overlay:  #1c1b1fe6,
+
+        text-primary:   #e6e1e5,
+        text-secondary: #cac4d0,
+        text-tertiary:  #938f99,
+        text-disabled:  #49454f,
+        text-inverse:   #1c1b1f,
+        text-link:      #d0bcff,
+        text-link-hover:#e8deff,
+
+        success:            #7ddc94,
+        success-hover:      #a3f0b3,
+        success-bg:         #7ddc9420,
+        success-foreground: #003919,
+
+        warning:            #f9d76e,
+        warning-hover:      #fbe896,
+        warning-bg:         #f9d76e20,
+        warning-foreground: #3e2d00,
+
+        error:            #f2b8b5,
+        error-hover:      #f9d1cf,
+        error-bg:         #f2b8b520,
+        error-foreground: #601410,
+
+        info:            #a5c8ff,
+        info-hover:      #c3deff,
+        info-bg:         #a5c8ff20,
+        info-foreground: #003062,
+
+        border:         #49454f,
+        border-hover:   #605d66,
+        border-focus:   #d0bcff,
+        border-active:  #d0bcff,
+        border-error:   #f2b8b5,
+        border-success: #7ddc94,
+
+        focus-ring:           #d0bcff50,
+        selection:            #d0bcff30,
+        selection-foreground: #e6e1e5,
+        highlight:            #f9d76e30,
+
+        shadow-color: #00000060,
+        glow-color:   #d0bcff20,
+        overlay:      #1c1b1f80,
+        backdrop:     #1c1b1fcc,
+
+        gradient-start: #d0bcff,
+        gradient-mid:   #ccc2dc,
+        gradient-end:   #efb8c8,
+
+        scrollbar-track:       #1c1b1f,
+        scrollbar-thumb:       #49454f,
+        scrollbar-thumb-hover: #605d66,
+
+        tooltip-bg:   #2b2930ee,
+        tooltip-text: #e6e1e5,
+
+        skeleton-base:  #2b2930,
+        skeleton-shine: #36343b,
+
+        code-bg:      #141316,
+        code-text:    #e6e1e5,
+        code-keyword: #d0bcff,
+        code-string:  #7ddc94,
+        code-number:  #efb8c8,
+        code-comment: #938f99,
+    };
+}

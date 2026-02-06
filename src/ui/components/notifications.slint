@@ -1,0 +1,236 @@
+// ============================================================================
+// Konami Client - Notification System
+// Toast notifications and alerts with animations
+// ============================================================================
+
+import { Theme } from "../theme/theme.slint";
+
+export enum NotificationType {
+    info,
+    success,
+    warning,
+    error
+}
+
+export struct Notification {
+    id: int,
+    title: string,
+    message: string,
+    notification-type: NotificationType,
+    duration-ms: int,
+    dismissible: bool,
+}
+
+export component KonamiToast inherits Rectangle {
+    in property <string> title: "";
+    in property <string> message: "";
+    in property <NotificationType> notification-type: NotificationType.info;
+    in property <bool> dismissible: true;
+    in-out property <bool> visible: true;
+    
+    callback dismissed();
+    
+    property <duration> anim-duration: 300ms;
+    property <color> accent-color: 
+        notification-type == NotificationType.success ? #22c55e :
+        notification-type == NotificationType.warning ? #f59e0b :
+        notification-type == NotificationType.error ? #ef4444 :
+        Theme.primary;
+    property <string> icon:
+        notification-type == NotificationType.success ? "✓" :
+        notification-type == NotificationType.warning ? "⚠" :
+        notification-type == NotificationType.error ? "✕" :
+        "ℹ";
+    
+    width: 380px;
+    height: 80px;
+    border-radius: 16px;
+    background: Theme.surface;
+    border-width: 1px;
+    border-color: Theme.border;
+    drop-shadow-blur: 24px;
+    drop-shadow-color: #00000030;
+    drop-shadow-offset-y: 8px;
+    opacity: visible ? 1 : 0;
+    
+    animate opacity { duration: anim-duration; easing: ease-out; }
+    
+    // Accent border on left
+    Rectangle {
+        x: 0;
+        width: 4px;
+        height: 100%;
+        border-radius: 16px 0 0 16px;
+        background: accent-color;
+    }
+    
+    HorizontalLayout {
+        padding: 16px;
+        padding-left: 20px;
+        spacing: 12px;
+        
+        // Icon
+        Rectangle {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: accent-color.with-alpha(0.15);
+            
+            Text {
+                text: icon;
+                color: accent-color;
+                font-size: 18px;
+                font-weight: 700;
+            }
+        }
+        
+        // Content
+        VerticalLayout {
+            horizontal-stretch: 1;
+            spacing: 4px;
+            alignment: center;
+            
+            Text {
+                text: title;
+                color: Theme.text-primary;
+                font-size: 14px;
+                font-weight: 600;
+            }
+            
+            if message != "": Text {
+                text: message;
+                color: Theme.text-secondary;
+                font-size: 13px;
+                overflow: elide;
+            }
+        }
+        
+        // Dismiss button
+        if dismissible: Rectangle {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: touch.has-hover ? Theme.surface-hover : transparent;
+            
+            Text {
+                text: "✕";
+                color: Theme.text-muted;
+                font-size: 14px;
+            }
+            
+            touch := TouchArea {
+                mouse-cursor: pointer;
+                clicked => { dismissed(); }
+            }
+        }
+    }
+}
+
+// Notification container that manages multiple toasts
+export component KonamiNotificationContainer inherits Rectangle {
+    in property <[Notification]> notifications;
+    
+    callback dismiss(int);
+    
+    width: 400px;
+    height: 100%;
+    
+    VerticalLayout {
+        alignment: end;
+        padding: 20px;
+        spacing: 12px;
+        
+        for notification in notifications: KonamiToast {
+            title: notification.title;
+            message: notification.message;
+            notification-type: notification.notification-type;
+            dismissible: notification.dismissible;
+            
+            dismissed => { dismiss(notification.id); }
+        }
+    }
+}
+
+// In-page alert banner
+export component KonamiAlert inherits Rectangle {
+    in property <string> title: "";
+    in property <string> message: "";
+    in property <NotificationType> alert-type: NotificationType.info;
+    in property <bool> dismissible: false;
+    in-out property <bool> visible: true;
+    
+    callback dismissed();
+    
+    property <color> accent-color: 
+        alert-type == NotificationType.success ? #22c55e :
+        alert-type == NotificationType.warning ? #f59e0b :
+        alert-type == NotificationType.error ? #ef4444 :
+        Theme.primary;
+    
+    visible: visible;
+    width: 100%;
+    height: visible ? 60px : 0px;
+    border-radius: 12px;
+    background: accent-color.with-alpha(0.1);
+    border-width: 1px;
+    border-color: accent-color.with-alpha(0.3);
+    
+    animate height { duration: 200ms; easing: ease-out; }
+    
+    HorizontalLayout {
+        padding: 16px;
+        spacing: 12px;
+        
+        Text {
+            vertical-alignment: center;
+            text: alert-type == NotificationType.success ? "✓" :
+                  alert-type == NotificationType.warning ? "⚠" :
+                  alert-type == NotificationType.error ? "✕" : "ℹ";
+            color: accent-color;
+            font-size: 16px;
+            font-weight: 700;
+        }
+        
+        VerticalLayout {
+            horizontal-stretch: 1;
+            alignment: center;
+            
+            if title != "": Text {
+                text: title;
+                color: accent-color;
+                font-size: 14px;
+                font-weight: 600;
+            }
+            
+            if message != "": Text {
+                text: message;
+                color: accent-color.with-alpha(0.8);
+                font-size: 13px;
+            }
+        }
+        
+        if dismissible: TouchArea {
+            width: 24px;
+            height: 24px;
+            mouse-cursor: pointer;
+            
+            Rectangle {
+                width: 100%;
+                height: 100%;
+                border-radius: 6px;
+                background: parent.has-hover ? accent-color.with-alpha(0.15) : transparent;
+                
+                Text {
+                    text: "✕";
+                    color: accent-color;
+                    font-size: 12px;
+                }
+            }
+            
+            clicked => { 
+                visible = false;
+                dismissed(); 
+            }
+        }
+    }
+}

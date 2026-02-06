@@ -1,0 +1,236 @@
+// ============================================================================
+// Konami Client - Slider Component
+// Premium animated slider with value display
+// ============================================================================
+
+import { Theme } from "../theme/theme.slint";
+
+export component KonamiSlider inherits Rectangle {
+    in property <float> minimum: 0;
+    in property <float> maximum: 100;
+    in-out property <float> value: 50;
+    in property <string> label: "";
+    in property <string> suffix: "";
+    in property <bool> show-value: true;
+    in property <bool> disabled: false;
+    in property <int> decimals: 0;
+    
+    callback changed(float);
+    
+    property <float> progress: (value - minimum) / (maximum - minimum);
+    property <bool> is-dragging: false;
+    property <duration> anim-duration: 150ms;
+    
+    width: 100%;
+    height: label != "" ? 60px : 32px;
+    
+    VerticalLayout {
+        spacing: 8px;
+        
+        // Label and value
+        if label != "" || show-value: HorizontalLayout {
+            height: 20px;
+            
+            if label != "": Text {
+                text: label;
+                color: Theme.text-secondary;
+                font-size: 13px;
+            }
+            
+            Rectangle { horizontal-stretch: 1; }
+            
+            if show-value: Text {
+                text: decimals == 0 ? 
+                    "\{Math.round(value)}\{suffix}" : 
+                    "\{Math.round(value * Math.pow(10, decimals)) / Math.pow(10, decimals)}\{suffix}";
+                color: Theme.text-primary;
+                font-size: 13px;
+                font-weight: 600;
+            }
+        }
+        
+        // Slider track
+        Rectangle {
+            height: 8px;
+            border-radius: 4px;
+            background: Theme.surface-hover;
+            
+            // Progress fill
+            Rectangle {
+                width: progress * parent.width;
+                height: 100%;
+                border-radius: 4px;
+                background: disabled ? Theme.text-muted : Theme.primary;
+                
+                animate width { duration: is-dragging ? 0ms : anim-duration; }
+                
+                // Glow
+                Rectangle {
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 4px;
+                    background: Theme.primary.with-alpha(is-dragging ? 0.4 : 0.2);
+                }
+            }
+            
+            // Thumb
+            Rectangle {
+                x: progress * (parent.width - 20px);
+                y: -6px;
+                width: 20px;
+                height: 20px;
+                border-radius: 10px;
+                background: white;
+                border-width: 2px;
+                border-color: Theme.primary;
+                drop-shadow-blur: is-dragging ? 12px : 6px;
+                drop-shadow-color: Theme.primary.with-alpha(is-dragging ? 0.5 : 0.3);
+                
+                animate x { duration: is-dragging ? 0ms : anim-duration; }
+                animate drop-shadow-blur, drop-shadow-color { duration: 150ms; }
+            }
+            
+            touch := TouchArea {
+                enabled: !disabled;
+                mouse-cursor: disabled ? not-allowed : pointer;
+                
+                pointer-event(event) => {
+                    if event.kind == PointerEventKind.down {
+                        is-dragging = true;
+                        update-value(self.mouse-x);
+                    } else if event.kind == PointerEventKind.up {
+                        is-dragging = false;
+                    }
+                }
+                
+                moved => {
+                    if is-dragging {
+                        update-value(self.mouse-x);
+                    }
+                }
+            }
+        }
+    }
+    
+    function update-value(mouse-x: length) {
+        value = Math.max(minimum, Math.min(maximum, 
+            minimum + (mouse-x / root.width) * (maximum - minimum)));
+        changed(value);
+    }
+}
+
+// Range slider with two handles
+export component KonamiRangeSlider inherits Rectangle {
+    in property <float> minimum: 0;
+    in property <float> maximum: 100;
+    in-out property <float> value-min: 25;
+    in-out property <float> value-max: 75;
+    in property <string> label: "";
+    in property <bool> disabled: false;
+    
+    callback range-changed(float, float);
+    
+    property <float> progress-min: (value-min - minimum) / (maximum - minimum);
+    property <float> progress-max: (value-max - minimum) / (maximum - minimum);
+    property <int> dragging-handle: 0; // 0 = none, 1 = min, 2 = max
+    
+    width: 100%;
+    height: label != "" ? 60px : 32px;
+    
+    VerticalLayout {
+        spacing: 8px;
+        
+        if label != "": HorizontalLayout {
+            height: 20px;
+            
+            Text {
+                text: label;
+                color: Theme.text-secondary;
+                font-size: 13px;
+            }
+            
+            Rectangle { horizontal-stretch: 1; }
+            
+            Text {
+                text: "\{Math.round(value-min)} - \{Math.round(value-max)}";
+                color: Theme.text-primary;
+                font-size: 13px;
+                font-weight: 600;
+            }
+        }
+        
+        Rectangle {
+            height: 8px;
+            border-radius: 4px;
+            background: Theme.surface-hover;
+            
+            // Range fill
+            Rectangle {
+                x: progress-min * parent.width;
+                width: (progress-max - progress-min) * parent.width;
+                height: 100%;
+                border-radius: 4px;
+                background: Theme.primary;
+            }
+            
+            // Min thumb
+            Rectangle {
+                x: progress-min * (parent.width - 20px);
+                y: -6px;
+                width: 20px;
+                height: 20px;
+                border-radius: 10px;
+                background: white;
+                border-width: 2px;
+                border-color: Theme.primary;
+                drop-shadow-blur: 6px;
+                drop-shadow-color: Theme.primary.with-alpha(0.3);
+            }
+            
+            // Max thumb
+            Rectangle {
+                x: progress-max * (parent.width - 20px);
+                y: -6px;
+                width: 20px;
+                height: 20px;
+                border-radius: 10px;
+                background: white;
+                border-width: 2px;
+                border-color: Theme.primary;
+                drop-shadow-blur: 6px;
+                drop-shadow-color: Theme.primary.with-alpha(0.3);
+            }
+            
+            TouchArea {
+                enabled: !disabled;
+                mouse-cursor: pointer;
+                
+                pointer-event(event) => {
+                    if event.kind == PointerEventKind.down {
+                        // Determine which handle to drag
+                        if Math.abs(self.mouse-x / parent.width - progress-min) < 
+                           Math.abs(self.mouse-x / parent.width - progress-max) {
+                            dragging-handle = 1;
+                        } else {
+                            dragging-handle = 2;
+                        }
+                    } else if event.kind == PointerEventKind.up {
+                        dragging-handle = 0;
+                    }
+                }
+                
+                moved => {
+                    if dragging-handle == 1 {
+                        value-min = Math.max(minimum, Math.min(value-max - 1,
+                            minimum + (self.mouse-x / parent.width) * (maximum - minimum)));
+                        range-changed(value-min, value-max);
+                    } else if dragging-handle == 2 {
+                        value-max = Math.max(value-min + 1, Math.min(maximum,
+                            minimum + (self.mouse-x / parent.width) * (maximum - minimum)));
+                        range-changed(value-min, value-max);
+                    }
+                }
+            }
+        }
+    }
+}

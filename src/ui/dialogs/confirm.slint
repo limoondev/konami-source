@@ -1,0 +1,154 @@
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║                   KONAMI CLIENT - CONFIRM DIALOG                 ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+import { Theme } from "../themes/base.slint";
+
+export component ConfirmDialog inherits Rectangle {
+    in property <bool> visible: false;
+    in property <string> title: "Confirm Action";
+    in property <string> message: "Are you sure?";
+    in property <string> confirm-text: "Confirm";
+    in property <string> cancel-text: "Cancel";
+    in property <string> variant: "default"; // default, danger, warning
+    
+    callback confirmed();
+    callback cancelled();
+    
+    property <color> action-color: 
+        variant == "danger" ? Theme.error :
+        variant == "warning" ? Theme.warning :
+        Theme.primary;
+    
+    // Backdrop
+    opacity: visible ? 1 : 0;
+    background: Theme.colors.backdrop;
+    
+    animate opacity { duration: 200ms; easing: ease-out; }
+    
+    TouchArea {
+        clicked => { cancelled(); }
+    }
+    
+    // Dialog card
+    Rectangle {
+        x: (parent.width - self.width) / 2;
+        y: visible ? (parent.height - self.height) / 2 : (parent.height - self.height) / 2 + 20px;
+        width: min(420px, parent.width - 40px);
+        height: dialog-content.preferred-height + 48px;
+        border-radius: Theme.radius.xl;
+        background: Theme.surface;
+        border-width: 1px;
+        border-color: Theme.border;
+        
+        animate y { duration: 300ms; easing: cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        TouchArea {} // Prevent click-through
+        
+        dialog-content := VerticalLayout {
+            padding: 24px;
+            spacing: 20px;
+            
+            // Icon + Title
+            HorizontalLayout {
+                spacing: 12px;
+                alignment: start;
+                
+                Rectangle {
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 12px;
+                    background: action-color.with-alpha(0.12);
+                    
+                    Text {
+                        text: variant == "danger" ? "\u{f071}" :
+                              variant == "warning" ? "\u{f06a}" : "\u{f059}";
+                        font-size: 20px;
+                        color: action-color;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                VerticalLayout {
+                    spacing: 4px;
+                    vertical-stretch: 1;
+                    
+                    Text {
+                        text: title;
+                        font-size: 18px;
+                        font-weight: 600;
+                        color: Theme.text;
+                    }
+                    
+                    Text {
+                        text: message;
+                        font-size: 14px;
+                        color: Theme.text-muted;
+                        wrap: word-wrap;
+                    }
+                }
+            }
+            
+            // Divider
+            Rectangle {
+                height: 1px;
+                background: Theme.border;
+            }
+            
+            // Buttons
+            HorizontalLayout {
+                spacing: 12px;
+                alignment: end;
+                
+                // Cancel button
+                Rectangle {
+                    width: cancel-label.preferred-width + 32px;
+                    height: 40px;
+                    border-radius: 10px;
+                    background: cancel-hover.has-hover ? Theme.colors.surface-hover : transparent;
+                    border-width: 1px;
+                    border-color: Theme.border;
+                    
+                    cancel-hover := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { cancelled(); }
+                    }
+                    
+                    cancel-label := Text {
+                        text: cancel-text;
+                        font-size: 14px;
+                        font-weight: 500;
+                        color: Theme.text-muted;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                // Confirm button
+                Rectangle {
+                    width: confirm-label.preferred-width + 32px;
+                    height: 40px;
+                    border-radius: 10px;
+                    background: confirm-hover.has-hover ? action-color.darker(0.1) : action-color;
+                    
+                    confirm-hover := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { confirmed(); }
+                    }
+                    
+                    confirm-label := Text {
+                        text: confirm-text;
+                        font-size: 14px;
+                        font-weight: 600;
+                        color: variant == "warning" ? Theme.colors.warning-foreground : Theme.colors.primary-foreground;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                    
+                    animate background { duration: 150ms; }
+                }
+            }
+        }
+    }
+}

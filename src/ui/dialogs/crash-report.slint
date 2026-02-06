@@ -1,0 +1,291 @@
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║                   KONAMI CLIENT - CRASH REPORT DIALOG            ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+import { Theme } from "../themes/base.slint";
+
+export component CrashReportDialog inherits Rectangle {
+    in property <bool> visible: false;
+    in property <string> crash-title: "Minecraft has crashed";
+    in property <string> crash-reason: "java.lang.OutOfMemoryError";
+    in property <string> crash-log: "";
+    in property <string> mc-version: "1.21.4";
+    in property <string> exit-code: "-1";
+    in property <string> uptime: "00:12:34";
+    
+    callback view-full-log();
+    callback copy-log();
+    callback relaunch();
+    callback close-dialog();
+    callback open-game-dir();
+    
+    opacity: visible ? 1 : 0;
+    background: Theme.colors.backdrop;
+    
+    animate opacity { duration: 200ms; easing: ease-out; }
+    
+    TouchArea {}
+    
+    Rectangle {
+        x: (parent.width - self.width) / 2;
+        y: visible ? (parent.height - self.height) / 2 : parent.height;
+        width: min(580px, parent.width - 40px);
+        height: min(520px, parent.height - 80px);
+        border-radius: Theme.radius.xl;
+        background: Theme.surface;
+        border-width: 1px;
+        border-color: Theme.error.with-alpha(0.3);
+        
+        animate y { duration: 400ms; easing: cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        TouchArea {}
+        
+        VerticalLayout {
+            padding: 28px;
+            spacing: 20px;
+            
+            // Header
+            HorizontalLayout {
+                spacing: 16px;
+                alignment: start;
+                
+                Rectangle {
+                    width: 56px;
+                    height: 56px;
+                    border-radius: 16px;
+                    background: Theme.error.with-alpha(0.12);
+                    
+                    Text {
+                        text: "\u{f188}";
+                        font-size: 24px;
+                        color: Theme.error;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                VerticalLayout {
+                    spacing: 4px;
+                    
+                    Text {
+                        text: crash-title;
+                        font-size: 20px;
+                        font-weight: 700;
+                        color: Theme.text;
+                    }
+                    
+                    Text {
+                        text: crash-reason;
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: Theme.error;
+                    }
+                }
+            }
+            
+            // Info grid
+            Rectangle {
+                height: 72px;
+                border-radius: Theme.radius.lg;
+                background: Theme.colors.background-alt;
+                border-width: 1px;
+                border-color: Theme.border;
+                
+                HorizontalLayout {
+                    padding: 16px;
+                    spacing: 0px;
+                    
+                    // Version
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        spacing: 4px;
+                        
+                        Text {
+                            text: "Version";
+                            font-size: 11px;
+                            color: Theme.text-subtle;
+                        }
+                        Text {
+                            text: mc-version;
+                            font-size: 14px;
+                            font-weight: 600;
+                            color: Theme.text;
+                        }
+                    }
+                    
+                    Rectangle { width: 1px; background: Theme.border; }
+                    
+                    // Exit code
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        padding-left: 16px;
+                        spacing: 4px;
+                        
+                        Text {
+                            text: "Exit Code";
+                            font-size: 11px;
+                            color: Theme.text-subtle;
+                        }
+                        Text {
+                            text: exit-code;
+                            font-size: 14px;
+                            font-weight: 600;
+                            color: Theme.error;
+                        }
+                    }
+                    
+                    Rectangle { width: 1px; background: Theme.border; }
+                    
+                    // Uptime
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        padding-left: 16px;
+                        spacing: 4px;
+                        
+                        Text {
+                            text: "Uptime";
+                            font-size: 11px;
+                            color: Theme.text-subtle;
+                        }
+                        Text {
+                            text: uptime;
+                            font-size: 14px;
+                            font-weight: 600;
+                            color: Theme.text;
+                        }
+                    }
+                }
+            }
+            
+            // Log preview
+            Rectangle {
+                vertical-stretch: 1;
+                border-radius: Theme.radius.lg;
+                background: Theme.colors.code-bg;
+                border-width: 1px;
+                border-color: Theme.border;
+                clip: true;
+                
+                VerticalLayout {
+                    padding: 14px;
+                    
+                    Text {
+                        text: crash-log;
+                        font-size: 11px;
+                        font-family: "JetBrains Mono, Fira Code, monospace";
+                        color: Theme.colors.code-text;
+                        wrap: word-wrap;
+                        overflow: elide;
+                    }
+                }
+            }
+            
+            // Actions
+            HorizontalLayout {
+                spacing: 10px;
+                
+                // Open game dir
+                Rectangle {
+                    horizontal-stretch: 1;
+                    height: 42px;
+                    border-radius: 10px;
+                    background: dir-hover.has-hover ? Theme.colors.surface-hover : transparent;
+                    border-width: 1px;
+                    border-color: Theme.border;
+                    
+                    dir-hover := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { open-game-dir(); }
+                    }
+                    
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: center;
+                        
+                        Text {
+                            text: "\u{f07b}";
+                            font-size: 14px;
+                            color: Theme.text-muted;
+                            vertical-alignment: center;
+                        }
+                        Text {
+                            text: "Game Folder";
+                            font-size: 13px;
+                            font-weight: 500;
+                            color: Theme.text-muted;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+                
+                // Copy log
+                Rectangle {
+                    horizontal-stretch: 1;
+                    height: 42px;
+                    border-radius: 10px;
+                    background: copy-hover.has-hover ? Theme.colors.surface-hover : transparent;
+                    border-width: 1px;
+                    border-color: Theme.border;
+                    
+                    copy-hover := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { copy-log(); }
+                    }
+                    
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: center;
+                        
+                        Text {
+                            text: "\u{f0c5}";
+                            font-size: 14px;
+                            color: Theme.text-muted;
+                            vertical-alignment: center;
+                        }
+                        Text {
+                            text: "Copy Log";
+                            font-size: 13px;
+                            font-weight: 500;
+                            color: Theme.text-muted;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+                
+                // Relaunch
+                Rectangle {
+                    horizontal-stretch: 1;
+                    height: 42px;
+                    border-radius: 10px;
+                    background: relaunch-hover.has-hover ? Theme.primary-hover : Theme.primary;
+                    
+                    relaunch-hover := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { relaunch(); }
+                    }
+                    
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: center;
+                        
+                        Text {
+                            text: "\u{f01e}";
+                            font-size: 14px;
+                            color: Theme.primary-fg;
+                            vertical-alignment: center;
+                        }
+                        Text {
+                            text: "Relaunch";
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: Theme.primary-fg;
+                            vertical-alignment: center;
+                        }
+                    }
+                    
+                    animate background { duration: 150ms; }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,435 @@
+// =============================================================================
+// Konami Client - Console/Logs Page
+// Real-time game console with filtering and search
+// =============================================================================
+
+import { KonamiTheme, ThemeColors, Animations, Spacing } from "../theme/theme.slint";
+import { KonamiButton, IconButton } from "../components/button.slint";
+import { GlassCard } from "../components/card.slint";
+import { KonamiInput, SearchInput } from "../components/input.slint";
+
+// =============================================================================
+// Log Level
+// =============================================================================
+
+export enum LogLevel {
+    Debug,
+    Info,
+    Warning,
+    Error,
+    Fatal
+}
+
+// =============================================================================
+// Log Entry Model
+// =============================================================================
+
+export struct LogEntry {
+    timestamp: string,
+    level: LogLevel,
+    source: string,
+    message: string
+}
+
+// =============================================================================
+// Log Entry Component
+// =============================================================================
+
+component LogEntryItem inherits Rectangle {
+    in property <LogEntry> entry;
+    in property <bool> selected: false;
+    
+    callback clicked();
+    
+    height: 36px;
+    background: selected ? ThemeColors.surface-active : transparent;
+    border-radius: 4px;
+    
+    property <color> level-color: 
+        entry.level == LogLevel.Debug ? ThemeColors.text-quaternary :
+        entry.level == LogLevel.Info ? ThemeColors.accent-primary :
+        entry.level == LogLevel.Warning ? ThemeColors.status-warning :
+        entry.level == LogLevel.Error ? ThemeColors.status-error :
+        ThemeColors.status-error;
+    
+    animate background { duration: Animations.duration-fast; }
+    
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+    }
+    
+    HorizontalLayout {
+        padding-left: Spacing.md;
+        padding-right: Spacing.md;
+        spacing: Spacing.md;
+        alignment: start;
+        
+        // Timestamp
+        Text {
+            width: 80px;
+            text: entry.timestamp;
+            font-size: 11px;
+            font-family: "JetBrains Mono", "Fira Code", monospace;
+            color: ThemeColors.text-quaternary;
+            vertical-alignment: center;
+        }
+        
+        // Level indicator
+        Rectangle {
+            width: 60px;
+            height: 20px;
+            border-radius: 4px;
+            background: root.level-color.transparentize(0.85);
+            
+            Text {
+                x: (parent.width - self.width) / 2;
+                y: (parent.height - self.height) / 2;
+                text: entry.level == LogLevel.Debug ? "DEBUG" :
+                      entry.level == LogLevel.Info ? "INFO" :
+                      entry.level == LogLevel.Warning ? "WARN" :
+                      entry.level == LogLevel.Error ? "ERROR" : "FATAL";
+                font-size: 10px;
+                font-weight: 600;
+                color: root.level-color;
+            }
+        }
+        
+        // Source
+        Text {
+            width: 120px;
+            text: "[" + entry.source + "]";
+            font-size: 11px;
+            font-family: "JetBrains Mono", "Fira Code", monospace;
+            color: ThemeColors.text-tertiary;
+            vertical-alignment: center;
+            overflow: elide;
+        }
+        
+        // Message
+        Text {
+            text: entry.message;
+            font-size: 12px;
+            font-family: "JetBrains Mono", "Fira Code", monospace;
+            color: ThemeColors.text-primary;
+            vertical-alignment: center;
+            overflow: elide;
+        }
+    }
+}
+
+// =============================================================================
+// Filter Toggle Button
+// =============================================================================
+
+component FilterToggle inherits Rectangle {
+    in property <string> label: "";
+    in property <color> indicator-color: ThemeColors.accent-primary;
+    in-out property <bool> active: true;
+    
+    callback toggled(bool);
+    
+    width: 70px;
+    height: 28px;
+    border-radius: 6px;
+    background: active ? indicator-color.transparentize(0.85) : ThemeColors.surface-secondary;
+    border-width: 1px;
+    border-color: active ? indicator-color.transparentize(0.5) : transparent;
+    
+    animate background { duration: Animations.duration-fast; }
+    animate border-color { duration: Animations.duration-fast; }
+    
+    touch := TouchArea {
+        clicked => {
+            root.active = !root.active;
+            root.toggled(root.active);
+        }
+    }
+    
+    HorizontalLayout {
+        padding: Spacing.xs;
+        spacing: Spacing.xs;
+        alignment: center;
+        
+        Rectangle {
+            width: 8px;
+            height: 8px;
+            border-radius: 4px;
+            background: root.indicator-color;
+            opacity: active ? 1.0 : 0.3;
+        }
+        
+        Text {
+            text: root.label;
+            font-size: 11px;
+            font-weight: 500;
+            color: active ? root.indicator-color : ThemeColors.text-tertiary;
+        }
+    }
+}
+
+// =============================================================================
+// Console Toolbar
+// =============================================================================
+
+component ConsoleToolbar inherits Rectangle {
+    in-out property <string> search-text: "";
+    in-out property <bool> show-debug: true;
+    in-out property <bool> show-info: true;
+    in-out property <bool> show-warning: true;
+    in-out property <bool> show-error: true;
+    in-out property <bool> auto-scroll: true;
+    
+    callback clear-logs();
+    callback export-logs();
+    callback search-changed(string);
+    
+    height: 56px;
+    background: ThemeColors.surface-secondary;
+    border-radius: 12px;
+    
+    HorizontalLayout {
+        padding: Spacing.md;
+        spacing: Spacing.md;
+        
+        // Search
+        SearchInput {
+            width: 250px;
+            placeholder: "Search logs...";
+            text <=> root.search-text;
+            
+            edited(text) => {
+                root.search-changed(text);
+            }
+        }
+        
+        // Spacer
+        Rectangle { }
+        
+        // Filters
+        HorizontalLayout {
+            spacing: Spacing.sm;
+            
+            FilterToggle {
+                label: "Debug";
+                indicator-color: ThemeColors.text-quaternary;
+                active <=> root.show-debug;
+            }
+            
+            FilterToggle {
+                label: "Info";
+                indicator-color: ThemeColors.accent-primary;
+                active <=> root.show-info;
+            }
+            
+            FilterToggle {
+                label: "Warn";
+                indicator-color: ThemeColors.status-warning;
+                active <=> root.show-warning;
+            }
+            
+            FilterToggle {
+                label: "Error";
+                indicator-color: ThemeColors.status-error;
+                active <=> root.show-error;
+            }
+        }
+        
+        // Divider
+        Rectangle {
+            width: 1px;
+            height: 100%;
+            background: ThemeColors.border-subtle;
+        }
+        
+        // Actions
+        HorizontalLayout {
+            spacing: Spacing.sm;
+            
+            IconButton {
+                icon: auto-scroll ? "▼" : "▽";
+                tooltip: auto-scroll ? "Auto-scroll ON" : "Auto-scroll OFF";
+                active: auto-scroll;
+                
+                clicked => {
+                    root.auto-scroll = !root.auto-scroll;
+                }
+            }
+            
+            IconButton {
+                icon: "⬇";
+                tooltip: "Export logs";
+                
+                clicked => {
+                    root.export-logs();
+                }
+            }
+            
+            IconButton {
+                icon: "🗑";
+                tooltip: "Clear logs";
+                
+                clicked => {
+                    root.clear-logs();
+                }
+            }
+        }
+    }
+}
+
+// =============================================================================
+// Main Console Page
+// =============================================================================
+
+export component ConsolePage inherits Rectangle {
+    in property <[LogEntry]> logs: [];
+    in property <int> total-lines: 0;
+    in property <bool> game-running: false;
+    
+    callback clear-logs();
+    callback export-logs();
+    callback copy-log(int);
+    
+    background: transparent;
+    
+    property <int> selected-index: -1;
+    property <string> search-filter: "";
+    property <bool> show-debug: true;
+    property <bool> show-info: true;
+    property <bool> show-warning: true;
+    property <bool> show-error: true;
+    property <bool> auto-scroll: true;
+    
+    VerticalLayout {
+        padding: Spacing.lg;
+        spacing: Spacing.md;
+        
+        // Header
+        HorizontalLayout {
+            spacing: Spacing.md;
+            
+            Text {
+                text: "Console";
+                font-size: 24px;
+                font-weight: 700;
+                color: ThemeColors.text-primary;
+                vertical-alignment: center;
+            }
+            
+            // Status indicator
+            Rectangle {
+                width: 100px;
+                height: 28px;
+                border-radius: 14px;
+                background: game-running ? 
+                    ThemeColors.status-success.transparentize(0.85) : 
+                    ThemeColors.surface-tertiary;
+                
+                HorizontalLayout {
+                    padding-left: Spacing.sm;
+                    padding-right: Spacing.sm;
+                    spacing: Spacing.xs;
+                    alignment: center;
+                    
+                    Rectangle {
+                        width: 8px;
+                        height: 8px;
+                        border-radius: 4px;
+                        background: game-running ? ThemeColors.status-success : ThemeColors.text-quaternary;
+                        
+                        // Pulsing animation when running
+                        opacity: game-running ? 0.5 + Math.sin(animation-tick() / 500ms * 360deg) * 0.5 : 1.0;
+                    }
+                    
+                    Text {
+                        text: game-running ? "Running" : "Idle";
+                        font-size: 12px;
+                        font-weight: 500;
+                        color: game-running ? ThemeColors.status-success : ThemeColors.text-tertiary;
+                    }
+                }
+            }
+            
+            Rectangle { }
+            
+            Text {
+                text: total-lines + " lines";
+                font-size: 12px;
+                color: ThemeColors.text-tertiary;
+                vertical-alignment: center;
+            }
+        }
+        
+        // Toolbar
+        ConsoleToolbar {
+            search-text <=> root.search-filter;
+            show-debug <=> root.show-debug;
+            show-info <=> root.show-info;
+            show-warning <=> root.show-warning;
+            show-error <=> root.show-error;
+            auto-scroll <=> root.auto-scroll;
+            
+            clear-logs => { root.clear-logs(); }
+            export-logs => { root.export-logs(); }
+        }
+        
+        // Console output
+        GlassCard {
+            VerticalLayout {
+                padding: Spacing.sm;
+                
+                // Log entries
+                Flickable {
+                    viewport-height: logs.length * 36px;
+                    
+                    VerticalLayout {
+                        spacing: 2px;
+                        
+                        for log[index] in root.logs: LogEntryItem {
+                            entry: log;
+                            selected: index == root.selected-index;
+                            
+                            clicked => {
+                                root.selected-index = index;
+                            }
+                        }
+                    }
+                }
+                
+                // Empty state
+                if logs.length == 0: VerticalLayout {
+                    alignment: center;
+                    spacing: Spacing.md;
+                    
+                    Rectangle {
+                        width: 64px;
+                        height: 64px;
+                        border-radius: 16px;
+                        background: ThemeColors.surface-tertiary;
+                        
+                        Text {
+                            x: (parent.width - self.width) / 2;
+                            y: (parent.height - self.height) / 2;
+                            text: "📋";
+                            font-size: 28px;
+                        }
+                    }
+                    
+                    Text {
+                        text: "No logs yet";
+                        font-size: 16px;
+                        font-weight: 600;
+                        color: ThemeColors.text-secondary;
+                        horizontal-alignment: center;
+                    }
+                    
+                    Text {
+                        text: "Launch a game to see console output";
+                        font-size: 13px;
+                        color: ThemeColors.text-tertiary;
+                        horizontal-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

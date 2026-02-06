@@ -1,0 +1,696 @@
+// Konami Client - Mods Page
+// Revolutionary mod management interface with Modrinth/CurseForge integration
+
+import { Theme, KonamiTheme } from "../theme/theme.slint";
+import { KonamiCard, ModCard, GlassCard } from "../components/card.slint";
+import { KonamiButton, IconButton } from "../components/button.slint";
+import { SearchInput, KonamiInput } from "../components/input.slint";
+import { AnimatedProgress } from "../components/progress.slint";
+
+// Mod data structure
+export struct ModInfo {
+    id: string,
+    name: string,
+    author: string,
+    description: string,
+    version: string,
+    game-version: string,
+    downloads: int,
+    icon-url: string,
+    is-installed: bool,
+    is-enabled: bool,
+    is-updating: bool,
+    source: string, // "modrinth", "curseforge", "local"
+    category: string,
+}
+
+// Filter options
+export struct ModFilter {
+    search-query: string,
+    category: string,
+    loader: string,
+    game-version: string,
+    show-installed-only: bool,
+    sort-by: string,
+}
+
+export component ModsPage inherits Rectangle {
+    in property <[ModInfo]> installed-mods;
+    in property <[ModInfo]> search-results;
+    in property <ModFilter> current-filter;
+    in property <bool> is-searching;
+    in property <bool> is-loading;
+    in property <string> current-view: "installed"; // "installed", "browse", "updates"
+    
+    callback search-mods(string);
+    callback install-mod(string);
+    callback uninstall-mod(string);
+    callback toggle-mod(string, bool);
+    callback update-mod(string);
+    callback open-mod-details(string);
+    callback change-view(string);
+    callback apply-filter(ModFilter);
+    
+    background: Theme.background;
+    
+    VerticalLayout {
+        padding: 24px;
+        spacing: 20px;
+        
+        // Header with tabs
+        HorizontalLayout {
+            spacing: 16px;
+            alignment: space-between;
+            
+            // Tab navigation
+            HorizontalLayout {
+                spacing: 8px;
+                
+                Rectangle {
+                    width: 120px;
+                    height: 40px;
+                    border-radius: 8px;
+                    background: current-view == "installed" ? Theme.primary : transparent;
+                    
+                    animate background { duration: 200ms; easing: ease-out; }
+                    
+                    TouchArea {
+                        clicked => { change-view("installed"); }
+                    }
+                    
+                    Text {
+                        text: "Installed";
+                        font-size: 14px;
+                        font-weight: current-view == "installed" ? 600 : 400;
+                        color: current-view == "installed" ? Theme.text-on-primary : Theme.text-secondary;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                Rectangle {
+                    width: 120px;
+                    height: 40px;
+                    border-radius: 8px;
+                    background: current-view == "browse" ? Theme.primary : transparent;
+                    
+                    animate background { duration: 200ms; easing: ease-out; }
+                    
+                    TouchArea {
+                        clicked => { change-view("browse"); }
+                    }
+                    
+                    Text {
+                        text: "Browse";
+                        font-size: 14px;
+                        font-weight: current-view == "browse" ? 600 : 400;
+                        color: current-view == "browse" ? Theme.text-on-primary : Theme.text-secondary;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                Rectangle {
+                    width: 120px;
+                    height: 40px;
+                    border-radius: 8px;
+                    background: current-view == "updates" ? Theme.primary : transparent;
+                    
+                    animate background { duration: 200ms; easing: ease-out; }
+                    
+                    TouchArea {
+                        clicked => { change-view("updates"); }
+                    }
+                    
+                    HorizontalLayout {
+                        alignment: center;
+                        spacing: 6px;
+                        
+                        Text {
+                            text: "Updates";
+                            font-size: 14px;
+                            font-weight: current-view == "updates" ? 600 : 400;
+                            color: current-view == "updates" ? Theme.text-on-primary : Theme.text-secondary;
+                            vertical-alignment: center;
+                        }
+                        
+                        // Update badge
+                        Rectangle {
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 10px;
+                            background: Theme.accent;
+                            visible: true; // Show when updates available
+                            
+                            Text {
+                                text: "3";
+                                font-size: 11px;
+                                font-weight: 700;
+                                color: Theme.text-on-primary;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Search and filters
+            HorizontalLayout {
+                spacing: 12px;
+                
+                SearchInput {
+                    width: 300px;
+                    placeholder: "Search mods...";
+                    text: current-filter.search-query;
+                    search-requested(query) => { search-mods(query); }
+                }
+                
+                // Filter dropdown button
+                Rectangle {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 8px;
+                    background: Theme.surface;
+                    border-width: 1px;
+                    border-color: Theme.border;
+                    
+                    TouchArea {
+                        mouse-cursor: pointer;
+                    }
+                    
+                    Text {
+                        text: "\u{f0b0}"; // Filter icon
+                        font-size: 16px;
+                        color: Theme.text-secondary;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+        
+        // Filter bar
+        HorizontalLayout {
+            spacing: 12px;
+            height: 36px;
+            
+            // Category filter
+            Rectangle {
+                width: 140px;
+                height: 36px;
+                border-radius: 6px;
+                background: Theme.surface;
+                border-width: 1px;
+                border-color: Theme.border;
+                
+                HorizontalLayout {
+                    padding-left: 12px;
+                    padding-right: 12px;
+                    alignment: space-between;
+                    
+                    Text {
+                        text: "All Categories";
+                        font-size: 13px;
+                        color: Theme.text-primary;
+                        vertical-alignment: center;
+                    }
+                    
+                    Text {
+                        text: "\u{f107}"; // Chevron down
+                        font-size: 12px;
+                        color: Theme.text-tertiary;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+            
+            // Loader filter
+            Rectangle {
+                width: 120px;
+                height: 36px;
+                border-radius: 6px;
+                background: Theme.surface;
+                border-width: 1px;
+                border-color: Theme.border;
+                
+                HorizontalLayout {
+                    padding-left: 12px;
+                    padding-right: 12px;
+                    alignment: space-between;
+                    
+                    Text {
+                        text: "Fabric";
+                        font-size: 13px;
+                        color: Theme.text-primary;
+                        vertical-alignment: center;
+                    }
+                    
+                    Text {
+                        text: "\u{f107}";
+                        font-size: 12px;
+                        color: Theme.text-tertiary;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+            
+            // Version filter
+            Rectangle {
+                width: 100px;
+                height: 36px;
+                border-radius: 6px;
+                background: Theme.surface;
+                border-width: 1px;
+                border-color: Theme.border;
+                
+                HorizontalLayout {
+                    padding-left: 12px;
+                    padding-right: 12px;
+                    alignment: space-between;
+                    
+                    Text {
+                        text: "1.21.4";
+                        font-size: 13px;
+                        color: Theme.text-primary;
+                        vertical-alignment: center;
+                    }
+                    
+                    Text {
+                        text: "\u{f107}";
+                        font-size: 12px;
+                        color: Theme.text-tertiary;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+            
+            Rectangle { horizontal-stretch: 1; }
+            
+            // Sort dropdown
+            Rectangle {
+                width: 140px;
+                height: 36px;
+                border-radius: 6px;
+                background: Theme.surface;
+                border-width: 1px;
+                border-color: Theme.border;
+                
+                HorizontalLayout {
+                    padding-left: 12px;
+                    padding-right: 12px;
+                    alignment: space-between;
+                    
+                    Text {
+                        text: "Most Downloads";
+                        font-size: 13px;
+                        color: Theme.text-primary;
+                        vertical-alignment: center;
+                    }
+                    
+                    Text {
+                        text: "\u{f107}";
+                        font-size: 12px;
+                        color: Theme.text-tertiary;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+        
+        // Mods grid
+        Flickable {
+            viewport-height: mods-grid.preferred-height;
+            
+            mods-grid := VerticalLayout {
+                spacing: 12px;
+                
+                // Loading state
+                if is-loading: Rectangle {
+                    height: 200px;
+                    
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 16px;
+                        
+                        // Spinner
+                        Rectangle {
+                            width: 48px;
+                            height: 48px;
+                            border-radius: 24px;
+                            border-width: 3px;
+                            border-color: Theme.primary;
+                            
+                            animate rotation {
+                                duration: 1000ms;
+                                iteration-count: -1;
+                                easing: linear;
+                            }
+                        }
+                        
+                        Text {
+                            text: "Loading mods...";
+                            font-size: 14px;
+                            color: Theme.text-secondary;
+                            horizontal-alignment: center;
+                        }
+                    }
+                }
+                
+                // Installed mods view
+                if current-view == "installed" && !is-loading: VerticalLayout {
+                    spacing: 12px;
+                    
+                    for mod in installed-mods: ModListItem {
+                        mod-info: mod;
+                        toggle-enabled(id, enabled) => { toggle-mod(id, enabled); }
+                        uninstall-clicked(id) => { uninstall-mod(id); }
+                        details-clicked(id) => { open-mod-details(id); }
+                    }
+                }
+                
+                // Browse view
+                if current-view == "browse" && !is-loading: VerticalLayout {
+                    spacing: 12px;
+                    
+                    for mod in search-results: ModBrowseItem {
+                        mod-info: mod;
+                        install-clicked(id) => { install-mod(id); }
+                        details-clicked(id) => { open-mod-details(id); }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Installed mod list item
+component ModListItem inherits Rectangle {
+    in property <ModInfo> mod-info;
+    
+    callback toggle-enabled(string, bool);
+    callback uninstall-clicked(string);
+    callback details-clicked(string);
+    
+    height: 72px;
+    border-radius: 12px;
+    background: Theme.surface;
+    border-width: 1px;
+    border-color: touch.has-hover ? Theme.primary.with-alpha(0.3) : Theme.border;
+    
+    animate border-color { duration: 150ms; }
+    animate background { duration: 150ms; }
+    
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { details-clicked(mod-info.id); }
+    }
+    
+    HorizontalLayout {
+        padding: 12px;
+        spacing: 12px;
+        
+        // Mod icon
+        Rectangle {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            background: Theme.primary.with-alpha(0.1);
+            
+            Text {
+                text: "\u{f12e}"; // Puzzle icon
+                font-size: 24px;
+                color: Theme.primary;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+        
+        // Mod info
+        VerticalLayout {
+            horizontal-stretch: 1;
+            spacing: 4px;
+            alignment: center;
+            
+            HorizontalLayout {
+                spacing: 8px;
+                
+                Text {
+                    text: mod-info.name;
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: Theme.text-primary;
+                }
+                
+                // Source badge
+                Rectangle {
+                    width: badge-text.preferred-width + 12px;
+                    height: 18px;
+                    border-radius: 4px;
+                    background: mod-info.source == "modrinth" ? #00af5c : 
+                               mod-info.source == "curseforge" ? #f16436 : Theme.text-tertiary;
+                    
+                    badge-text := Text {
+                        text: mod-info.source == "modrinth" ? "Modrinth" : 
+                              mod-info.source == "curseforge" ? "CurseForge" : "Local";
+                        font-size: 10px;
+                        font-weight: 600;
+                        color: white;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+            
+            Text {
+                text: mod-info.author + " • v" + mod-info.version + " • " + mod-info.game-version;
+                font-size: 12px;
+                color: Theme.text-secondary;
+            }
+        }
+        
+        // Actions
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: center;
+            
+            // Enable/Disable toggle
+            Rectangle {
+                width: 44px;
+                height: 24px;
+                border-radius: 12px;
+                background: mod-info.is-enabled ? Theme.success : Theme.surface-variant;
+                
+                animate background { duration: 200ms; easing: ease-out; }
+                
+                TouchArea {
+                    clicked => { toggle-enabled(mod-info.id, !mod-info.is-enabled); }
+                }
+                
+                Rectangle {
+                    x: mod-info.is-enabled ? 22px : 2px;
+                    y: 2px;
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 10px;
+                    background: white;
+                    
+                    animate x { duration: 200ms; easing: ease-out; }
+                }
+            }
+            
+            // Uninstall button
+            Rectangle {
+                width: 32px;
+                height: 32px;
+                border-radius: 6px;
+                background: uninstall-touch.has-hover ? Theme.error.with-alpha(0.1) : transparent;
+                
+                animate background { duration: 150ms; }
+                
+                uninstall-touch := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { uninstall-clicked(mod-info.id); }
+                }
+                
+                Text {
+                    text: "\u{f1f8}"; // Trash icon
+                    font-size: 14px;
+                    color: Theme.error;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+}
+
+// Browse mod item
+component ModBrowseItem inherits Rectangle {
+    in property <ModInfo> mod-info;
+    
+    callback install-clicked(string);
+    callback details-clicked(string);
+    
+    height: 88px;
+    border-radius: 12px;
+    background: Theme.surface;
+    border-width: 1px;
+    border-color: touch.has-hover ? Theme.primary.with-alpha(0.3) : Theme.border;
+    
+    animate border-color { duration: 150ms; }
+    
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { details-clicked(mod-info.id); }
+    }
+    
+    HorizontalLayout {
+        padding: 12px;
+        spacing: 12px;
+        
+        // Mod icon
+        Rectangle {
+            width: 64px;
+            height: 64px;
+            border-radius: 8px;
+            background: Theme.primary.with-alpha(0.1);
+            
+            Text {
+                text: "\u{f12e}";
+                font-size: 28px;
+                color: Theme.primary;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+        
+        // Mod info
+        VerticalLayout {
+            horizontal-stretch: 1;
+            spacing: 4px;
+            
+            HorizontalLayout {
+                spacing: 8px;
+                
+                Text {
+                    text: mod-info.name;
+                    font-size: 15px;
+                    font-weight: 600;
+                    color: Theme.text-primary;
+                }
+                
+                Rectangle {
+                    width: src-badge.preferred-width + 12px;
+                    height: 18px;
+                    border-radius: 4px;
+                    background: mod-info.source == "modrinth" ? #00af5c : #f16436;
+                    
+                    src-badge := Text {
+                        text: mod-info.source == "modrinth" ? "Modrinth" : "CurseForge";
+                        font-size: 10px;
+                        font-weight: 600;
+                        color: white;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+            
+            Text {
+                text: mod-info.description;
+                font-size: 12px;
+                color: Theme.text-secondary;
+                overflow: elide;
+            }
+            
+            HorizontalLayout {
+                spacing: 12px;
+                
+                Text {
+                    text: "by " + mod-info.author;
+                    font-size: 11px;
+                    color: Theme.text-tertiary;
+                }
+                
+                Text {
+                    text: "\u{f019} " + mod-info.downloads;
+                    font-size: 11px;
+                    color: Theme.text-tertiary;
+                }
+                
+                Text {
+                    text: mod-info.game-version;
+                    font-size: 11px;
+                    color: Theme.text-tertiary;
+                }
+            }
+        }
+        
+        // Install button
+        VerticalLayout {
+            alignment: center;
+            
+            if mod-info.is-installed: Rectangle {
+                width: 100px;
+                height: 36px;
+                border-radius: 8px;
+                background: Theme.success.with-alpha(0.1);
+                
+                HorizontalLayout {
+                    alignment: center;
+                    spacing: 6px;
+                    
+                    Text {
+                        text: "\u{f00c}";
+                        font-size: 12px;
+                        color: Theme.success;
+                        vertical-alignment: center;
+                    }
+                    
+                    Text {
+                        text: "Installed";
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: Theme.success;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+            
+            if !mod-info.is-installed: Rectangle {
+                width: 100px;
+                height: 36px;
+                border-radius: 8px;
+                background: install-touch.has-hover ? Theme.primary-hover : Theme.primary;
+                
+                animate background { duration: 150ms; }
+                
+                install-touch := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { install-clicked(mod-info.id); }
+                }
+                
+                HorizontalLayout {
+                    alignment: center;
+                    spacing: 6px;
+                    
+                    Text {
+                        text: "\u{f019}";
+                        font-size: 12px;
+                        color: Theme.text-on-primary;
+                        vertical-alignment: center;
+                    }
+                    
+                    Text {
+                        text: "Install";
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: Theme.text-on-primary;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

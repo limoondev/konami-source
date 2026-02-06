@@ -1,0 +1,331 @@
+// Konami Client - Sidebar Navigation Component
+import { ThemeManager } from "../theme/theme.slint";
+
+// Navigation item data
+export struct NavItem {
+    id: string,
+    label: string,
+    icon: string,
+    badge: int,
+}
+
+// Sidebar Item Component
+export component SidebarItem inherits Rectangle {
+    in property <string> label: "Item";
+    in property <string> icon: "⚙";
+    in property <int> badge: 0;
+    in property <bool> active: false;
+    in property <bool> collapsed: false;
+    
+    callback clicked();
+    
+    property <bool> hovered: touch.has-hover;
+    
+    height: 44px;
+    border-radius: ThemeManager.radius.md;
+    background: active ? ThemeManager.colors.primary.with-alpha(0.15) :
+                hovered ? ThemeManager.colors.surface-hover : transparent;
+    
+    animate background { duration: ThemeManager.animation.duration-fast; }
+    
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+    
+    HorizontalLayout {
+        padding-left: collapsed ? 12px : ThemeManager.spacing.md;
+        padding-right: collapsed ? 12px : ThemeManager.spacing.md;
+        spacing: collapsed ? 0px : 12px;
+        
+        // Icon
+        Rectangle {
+            width: 24px;
+            height: 24px;
+            
+            Text {
+                text: icon;
+                font-size: 18px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+        
+        // Label
+        if !collapsed: Text {
+            text: label;
+            color: active ? ThemeManager.colors.primary : ThemeManager.colors.foreground;
+            font-size: 14px;
+            font-weight: active ? 600 : 400;
+            vertical-alignment: center;
+            horizontal-stretch: 1;
+        }
+        
+        // Badge
+        if badge > 0 && !collapsed: Rectangle {
+            width: 20px;
+            height: 20px;
+            border-radius: 10px;
+            background: ThemeManager.colors.error;
+            
+            Text {
+                text: badge > 99 ? "99+" : badge;
+                color: ThemeManager.colors.error-foreground;
+                font-size: 10px;
+                font-weight: 600;
+            }
+        }
+    }
+    
+    // Active indicator
+    if active: Rectangle {
+        x: 0;
+        y: (parent.height - 24px) / 2;
+        width: 3px;
+        height: 24px;
+        border-radius: 2px;
+        background: ThemeManager.colors.primary;
+    }
+}
+
+// Main Sidebar Component
+export component Sidebar inherits Rectangle {
+    in property <string> logo-text: "KONAMI";
+    in property <string> logo-subtitle: "CLIENT";
+    in property <[NavItem]> nav-items: [];
+    in property <[NavItem]> bottom-items: [];
+    in-out property <string> active-item: "";
+    in property <bool> collapsed: false;
+    
+    callback item-clicked(string);
+    callback toggle-collapse();
+    
+    width: collapsed ? 64px : 240px;
+    background: ThemeManager.colors.background-secondary;
+    border-width: 0 1px 0 0;
+    border-color: ThemeManager.colors.border;
+    
+    animate width { duration: ThemeManager.animation.duration-normal; }
+    
+    VerticalLayout {
+        padding: ThemeManager.spacing.md;
+        spacing: ThemeManager.spacing.md;
+        
+        // Logo
+        Rectangle {
+            height: 60px;
+            
+            TouchArea {
+                clicked => { root.toggle-collapse(); }
+            }
+            
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: collapsed ? center : start;
+                
+                // Logo icon/letter
+                Rectangle {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: ThemeManager.radius.md;
+                    background: @linear-gradient(135deg, 
+                        ThemeManager.colors.primary 0%, 
+                        ThemeManager.colors.accent 100%);
+                    
+                    Text {
+                        text: "K";
+                        color: ThemeManager.colors.primary-foreground;
+                        font-size: 24px;
+                        font-weight: 700;
+                    }
+                }
+                
+                if !collapsed: VerticalLayout {
+                    alignment: center;
+                    spacing: 0;
+                    
+                    Text {
+                        text: logo-text;
+                        color: ThemeManager.colors.foreground;
+                        font-size: 18px;
+                        font-weight: 700;
+                        letter-spacing: 2px;
+                    }
+                    
+                    Text {
+                        text: logo-subtitle;
+                        color: ThemeManager.colors.primary;
+                        font-size: 10px;
+                        font-weight: 500;
+                        letter-spacing: 3px;
+                    }
+                }
+            }
+        }
+        
+        // Divider
+        Rectangle {
+            height: 1px;
+            background: ThemeManager.colors.border;
+        }
+        
+        // Navigation items
+        VerticalLayout {
+            spacing: 4px;
+            vertical-stretch: 1;
+            
+            for item in nav-items: SidebarItem {
+                label: item.label;
+                icon: item.icon;
+                badge: item.badge;
+                active: active-item == item.id;
+                collapsed: root.collapsed;
+                
+                clicked => {
+                    active-item = item.id;
+                    root.item-clicked(item.id);
+                }
+            }
+        }
+        
+        // Divider before bottom items
+        if bottom-items.length > 0: Rectangle {
+            height: 1px;
+            background: ThemeManager.colors.border;
+        }
+        
+        // Bottom navigation items
+        VerticalLayout {
+            spacing: 4px;
+            
+            for item in bottom-items: SidebarItem {
+                label: item.label;
+                icon: item.icon;
+                badge: item.badge;
+                active: active-item == item.id;
+                collapsed: root.collapsed;
+                
+                clicked => {
+                    active-item = item.id;
+                    root.item-clicked(item.id);
+                }
+            }
+        }
+        
+        // Collapse toggle
+        Rectangle {
+            height: 36px;
+            border-radius: ThemeManager.radius.md;
+            background: collapse-touch.has-hover ? ThemeManager.colors.surface-hover : transparent;
+            
+            collapse-touch := TouchArea {
+                clicked => { root.toggle-collapse(); }
+            }
+            
+            HorizontalLayout {
+                alignment: center;
+                
+                Text {
+                    text: collapsed ? "»" : "«";
+                    color: ThemeManager.colors.foreground-muted;
+                    font-size: 16px;
+                }
+                
+                if !collapsed: Text {
+                    text: "  Collapse";
+                    color: ThemeManager.colors.foreground-muted;
+                    font-size: 12px;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+}
+
+// User info component for sidebar bottom
+export component SidebarUserInfo inherits Rectangle {
+    in property <string> username: "Player";
+    in property <image> avatar;
+    in property <bool> online: true;
+    in property <bool> collapsed: false;
+    
+    callback settings-clicked();
+    
+    height: 56px;
+    border-radius: ThemeManager.radius.md;
+    background: touch.has-hover ? ThemeManager.colors.surface-hover : ThemeManager.colors.surface;
+    
+    animate background { duration: ThemeManager.animation.duration-fast; }
+    
+    touch := TouchArea {
+        clicked => { root.settings-clicked(); }
+    }
+    
+    HorizontalLayout {
+        padding: collapsed ? 8px : ThemeManager.spacing.sm;
+        spacing: collapsed ? 0px : 10px;
+        
+        // Avatar
+        Rectangle {
+            width: 36px;
+            height: 36px;
+            border-radius: 18px;
+            background: ThemeManager.colors.background-tertiary;
+            
+            if avatar.width > 0: Image {
+                source: avatar;
+                width: 100%;
+                height: 100%;
+                image-rendering: pixelated;
+            }
+            
+            if avatar.width <= 0: Text {
+                text: "👤";
+                font-size: 18px;
+            }
+            
+            // Online indicator
+            Rectangle {
+                x: parent.width - 10px;
+                y: parent.height - 10px;
+                width: 10px;
+                height: 10px;
+                border-radius: 5px;
+                background: online ? ThemeManager.colors.success : ThemeManager.colors.foreground-subtle;
+                border-width: 2px;
+                border-color: ThemeManager.colors.surface;
+            }
+        }
+        
+        if !collapsed: VerticalLayout {
+            spacing: 2px;
+            horizontal-stretch: 1;
+            alignment: center;
+            
+            Text {
+                text: username;
+                color: ThemeManager.colors.foreground;
+                font-size: 13px;
+                font-weight: 500;
+                overflow: elide;
+            }
+            
+            Text {
+                text: online ? "Online" : "Offline";
+                color: online ? ThemeManager.colors.success : ThemeManager.colors.foreground-subtle;
+                font-size: 11px;
+            }
+        }
+        
+        if !collapsed: Rectangle {
+            width: 24px;
+            height: 24px;
+            
+            Text {
+                text: "⚙";
+                font-size: 16px;
+                color: ThemeManager.colors.foreground-muted;
+            }
+        }
+    }
+}

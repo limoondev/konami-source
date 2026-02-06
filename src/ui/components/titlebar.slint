@@ -1,0 +1,303 @@
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║                   KONAMI CLIENT - PREMIUM TITLEBAR               ║
+// ║  Custom window chrome with acrylic backdrop                     ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+import { Theme } from "../themes/base.slint";
+
+export component PremiumTitleBar inherits Rectangle {
+    in property <string> title: "Konami Client";
+    in property <string> subtitle: "";
+    in property <string> username: "";
+    in property <bool> is-logged-in: false;
+    in property <bool> is-maximized: false;
+    in property <bool> show-back: false;
+    in property <bool> update-available: false;
+    
+    callback minimize();
+    callback maximize();
+    callback close();
+    callback login();
+    callback logout();
+    callback back();
+    callback check-update();
+    
+    height: 44px;
+    background: Theme.surface;
+    border-width: 0 0 1px 0;
+    border-color: Theme.border;
+    
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 8px;
+        
+        // Left section: Back + Title
+        HorizontalLayout {
+            horizontal-stretch: 1;
+            spacing: 10px;
+            
+            if show-back: Rectangle {
+                width: 32px;
+                height: 32px;
+                border-radius: 8px;
+                background: back-touch.has-hover ? Theme.colors.surface-hover : transparent;
+                
+                back-touch := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { back(); }
+                }
+                
+                Text {
+                    text: "\u{f053}";
+                    font-size: 14px;
+                    color: Theme.text-muted;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+            
+            // Drag area + Title
+            Rectangle {
+                horizontal-stretch: 1;
+                
+                HorizontalLayout {
+                    spacing: 8px;
+                    
+                    // Logo badge
+                    Rectangle {
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 7px;
+                        background: @linear-gradient(135deg, Theme.primary, Theme.colors.accent);
+                        
+                        Text {
+                            text: "K";
+                            font-size: 16px;
+                            font-weight: 800;
+                            color: white;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                    
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 0;
+                        
+                        Text {
+                            text: title;
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: Theme.text;
+                        }
+                        
+                        if subtitle != "": Text {
+                            text: subtitle;
+                            font-size: 10px;
+                            color: Theme.text-subtle;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Center: Search shortcut hint
+        Rectangle {
+            width: 160px;
+            height: 30px;
+            border-radius: 8px;
+            background: Theme.colors.surface-hover;
+            border-width: 1px;
+            border-color: Theme.border;
+            
+            search-touch := TouchArea {
+                mouse-cursor: pointer;
+            }
+            
+            HorizontalLayout {
+                padding-left: 10px;
+                padding-right: 10px;
+                spacing: 8px;
+                
+                Text {
+                    text: "\u{f002}";
+                    font-size: 12px;
+                    color: Theme.text-subtle;
+                    vertical-alignment: center;
+                }
+                
+                Text {
+                    text: "Search...";
+                    font-size: 12px;
+                    color: Theme.text-subtle;
+                    vertical-alignment: center;
+                    horizontal-stretch: 1;
+                }
+                
+                Rectangle {
+                    width: 42px;
+                    height: 20px;
+                    border-radius: 4px;
+                    background: Theme.colors.background-alt;
+                    
+                    Text {
+                        text: "Ctrl+K";
+                        font-size: 10px;
+                        font-weight: 500;
+                        color: Theme.text-subtle;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+        
+        Rectangle { width: 16px; }
+        
+        // Right section: Account + Update + Window controls
+        HorizontalLayout {
+            spacing: 8px;
+            
+            // Update indicator
+            if update-available: Rectangle {
+                width: 32px;
+                height: 32px;
+                border-radius: 8px;
+                background: update-touch.has-hover ? Theme.success.with-alpha(0.15) : Theme.success.with-alpha(0.08);
+                
+                update-touch := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { check-update(); }
+                }
+                
+                Text {
+                    text: "\u{f019}";
+                    font-size: 14px;
+                    color: Theme.success;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+            
+            // Account section
+            if is-logged-in: HorizontalLayout {
+                spacing: 8px;
+                
+                Rectangle {
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 7px;
+                    background: Theme.primary.with-alpha(0.15);
+                    
+                    Text {
+                        text: "\u{f007}";
+                        font-size: 13px;
+                        color: Theme.primary;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                Text {
+                    text: username;
+                    font-size: 13px;
+                    font-weight: 500;
+                    color: Theme.text;
+                    vertical-alignment: center;
+                }
+            }
+            
+            if !is-logged-in: Rectangle {
+                width: 72px;
+                height: 30px;
+                border-radius: 8px;
+                background: login-touch.has-hover ? Theme.primary-hover : Theme.primary;
+                
+                login-touch := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { login(); }
+                }
+                
+                Text {
+                    text: "Login";
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: Theme.primary-fg;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                
+                animate background { duration: 150ms; }
+            }
+            
+            Rectangle { width: 4px; }
+            
+            // Window controls
+            HorizontalLayout {
+                spacing: 2px;
+                
+                Rectangle {
+                    width: 36px;
+                    height: 32px;
+                    border-radius: 6px;
+                    background: min-touch.has-hover ? Theme.colors.surface-hover : transparent;
+                    
+                    min-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { minimize(); }
+                    }
+                    
+                    Text {
+                        text: "\u{2212}";
+                        font-size: 16px;
+                        color: Theme.text-muted;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                Rectangle {
+                    width: 36px;
+                    height: 32px;
+                    border-radius: 6px;
+                    background: max-touch.has-hover ? Theme.colors.surface-hover : transparent;
+                    
+                    max-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { maximize(); }
+                    }
+                    
+                    Text {
+                        text: is-maximized ? "\u{2752}" : "\u{25a1}";
+                        font-size: is-maximized ? 12px : 14px;
+                        color: Theme.text-muted;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                Rectangle {
+                    width: 36px;
+                    height: 32px;
+                    border-radius: 6px;
+                    background: close-touch.has-hover ? Theme.error : transparent;
+                    
+                    close-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { close(); }
+                    }
+                    
+                    Text {
+                        text: "\u{2715}";
+                        font-size: 12px;
+                        color: close-touch.has-hover ? white : Theme.text-muted;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                    
+                    animate background { duration: 100ms; }
+                }
+            }
+        }
+    }
+}

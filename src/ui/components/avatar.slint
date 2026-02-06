@@ -1,0 +1,223 @@
+// ============================================================================
+// Konami Client - Avatar Component
+// User avatars and skin previews
+// ============================================================================
+
+import { Theme } from "../theme/theme.slint";
+
+export component KonamiAvatar inherits Rectangle {
+    in property <image> avatar-image;
+    in property <string> fallback-text: "";
+    in property <length> size: 40px;
+    in property <bool> online: false;
+    in property <bool> show-status: false;
+    in property <bool> bordered: false;
+    
+    width: size;
+    height: size;
+    border-radius: size / 2;
+    background: Theme.surface-hover;
+    border-width: bordered ? 2px : 0px;
+    border-color: Theme.primary;
+    clip: true;
+    
+    // Avatar image
+    Image {
+        width: 100%;
+        height: 100%;
+        source: avatar-image;
+        image-fit: cover;
+    }
+    
+    // Fallback initials
+    if fallback-text != "": Text {
+        text: fallback-text;
+        color: Theme.text-secondary;
+        font-size: size / 2.5;
+        font-weight: 600;
+    }
+    
+    // Online status indicator
+    if show-status: Rectangle {
+        x: parent.width - 12px;
+        y: parent.height - 12px;
+        width: 12px;
+        height: 12px;
+        border-radius: 6px;
+        background: online ? #22c55e : #6b7280;
+        border-width: 2px;
+        border-color: Theme.background;
+    }
+}
+
+// Minecraft skin head preview
+export component KonamiSkinHead inherits Rectangle {
+    in property <image> skin-texture;
+    in property <length> size: 64px;
+    in property <bool> show-overlay: true;
+    
+    width: size;
+    height: size;
+    background: Theme.surface;
+    border-radius: 8px;
+    clip: true;
+    
+    // Base skin head (front face)
+    // In actual implementation, this would use proper UV mapping
+    Image {
+        width: 100%;
+        height: 100%;
+        source: skin-texture;
+        image-fit: cover;
+    }
+    
+    // 3D effect shadow
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        background: @linear-gradient(180deg, 
+            transparent 0%, 
+            transparent 70%,
+            #00000020 100%);
+    }
+}
+
+// Avatar group (stacked avatars)
+export component KonamiAvatarGroup inherits Rectangle {
+    in property <[image]> avatars;
+    in property <int> max-visible: 4;
+    in property <length> avatar-size: 32px;
+    in property <int> total-count: 0;
+    
+    property <int> visible-count: min(avatars.length, max-visible);
+    property <int> overflow-count: total-count > 0 ? 
+        total-count - visible-count : 
+        avatars.length - visible-count;
+    
+    width: (avatar-size - 8px) * visible-count + (overflow-count > 0 ? avatar-size : 0px) + 8px;
+    height: avatar-size;
+    
+    HorizontalLayout {
+        spacing: -8px;
+        
+        for avatar[index] in avatars: Rectangle {
+            visible: index < max-visible;
+            width: avatar-size;
+            height: avatar-size;
+            border-radius: avatar-size / 2;
+            background: Theme.surface;
+            border-width: 2px;
+            border-color: Theme.background;
+            clip: true;
+            
+            Image {
+                width: 100%;
+                height: 100%;
+                source: avatar;
+                image-fit: cover;
+            }
+        }
+        
+        // Overflow indicator
+        if overflow-count > 0: Rectangle {
+            width: avatar-size;
+            height: avatar-size;
+            border-radius: avatar-size / 2;
+            background: Theme.surface-hover;
+            border-width: 2px;
+            border-color: Theme.background;
+            
+            Text {
+                text: "+\{overflow-count}";
+                color: Theme.text-secondary;
+                font-size: 11px;
+                font-weight: 600;
+            }
+        }
+    }
+}
+
+// Profile avatar with edit option
+export component KonamiEditableAvatar inherits Rectangle {
+    in property <image> avatar-image;
+    in property <length> size: 80px;
+    in property <bool> editable: true;
+    
+    callback edit-clicked();
+    
+    property <bool> is-hovered: false;
+    
+    width: size;
+    height: size;
+    
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        border-radius: size / 2;
+        background: Theme.surface-hover;
+        clip: true;
+        
+        Image {
+            width: 100%;
+            height: 100%;
+            source: avatar-image;
+            image-fit: cover;
+        }
+        
+        // Hover overlay
+        if editable && is-hovered: Rectangle {
+            width: 100%;
+            height: 100%;
+            background: #000000aa;
+            
+            VerticalLayout {
+                alignment: center;
+                
+                Text {
+                    text: "📷";
+                    font-size: size / 3;
+                    horizontal-alignment: center;
+                }
+                
+                Text {
+                    text: "Change";
+                    color: white;
+                    font-size: 12px;
+                    horizontal-alignment: center;
+                }
+            }
+        }
+        
+        if editable: TouchArea {
+            mouse-cursor: pointer;
+            
+            moved => { is-hovered = true; }
+            
+            pointer-event(event) => {
+                if event.kind == PointerEventKind.move {
+                    is-hovered = self.has-hover;
+                }
+            }
+            
+            clicked => { edit-clicked(); }
+        }
+    }
+    
+    // Edit badge
+    if editable: Rectangle {
+        x: parent.width - 24px;
+        y: parent.height - 24px;
+        width: 28px;
+        height: 28px;
+        border-radius: 14px;
+        background: Theme.primary;
+        border-width: 3px;
+        border-color: Theme.background;
+        
+        Text {
+            text: "✎";
+            color: white;
+            font-size: 14px;
+        }
+    }
+}

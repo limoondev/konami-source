@@ -1,0 +1,979 @@
+// Konami Client - Settings Page
+// Comprehensive settings with theme customization and performance options
+
+import { Theme, KonamiTheme } from "../theme/theme.slint";
+import { KonamiCard, GlassCard } from "../components/card.slint";
+import { KonamiButton } from "../components/button.slint";
+import { KonamiInput, SearchInput } from "../components/input.slint";
+
+export struct LauncherSettings {
+    // General
+    language: string,
+    auto-update: bool,
+    minimize-on-launch: bool,
+    close-on-launch: bool,
+    show-news: bool,
+    
+    // Theme
+    theme-name: string,
+    accent-color: color,
+    use-blur-effects: bool,
+    animation-speed: float,
+    
+    // Java
+    java-path: string,
+    min-memory: int,
+    max-memory: int,
+    jvm-args: string,
+    
+    // Performance
+    concurrent-downloads: int,
+    use-cache: bool,
+    
+    // Advanced
+    game-directory: string,
+    keep-launcher-open: bool,
+    show-console: bool,
+}
+
+export component SettingsPage inherits Rectangle {
+    in-out property <LauncherSettings> settings;
+    in property <string> current-section: "general";
+    in property <[string]> available-themes: ["Konami Dark", "Cyberpunk", "Ocean", "Forest", "Sunset", "Midnight"];
+    in property <[string]> available-languages: ["English", "Francais", "Deutsch", "Espanol", "Portugues", "Italiano", "Japanese", "Korean", "Chinese"];
+    
+    callback save-settings(LauncherSettings);
+    callback reset-settings();
+    callback browse-java-path();
+    callback browse-game-directory();
+    callback change-section(string);
+    callback apply-theme(string);
+    
+    background: Theme.background;
+    
+    HorizontalLayout {
+        // Settings sidebar
+        Rectangle {
+            width: 220px;
+            background: Theme.surface;
+            border-width: 0px;
+            
+            VerticalLayout {
+                padding: 16px;
+                spacing: 4px;
+                
+                Text {
+                    text: "Settings";
+                    font-size: 20px;
+                    font-weight: 700;
+                    color: Theme.text-primary;
+                }
+                
+                Rectangle { height: 16px; }
+                
+                SettingsNavItem {
+                    icon: "\u{f013}";
+                    label: "General";
+                    is-active: current-section == "general";
+                    clicked => { change-section("general"); }
+                }
+                
+                SettingsNavItem {
+                    icon: "\u{f53f}";
+                    label: "Appearance";
+                    is-active: current-section == "appearance";
+                    clicked => { change-section("appearance"); }
+                }
+                
+                SettingsNavItem {
+                    icon: "\u{f11b}";
+                    label: "Java & Memory";
+                    is-active: current-section == "java";
+                    clicked => { change-section("java"); }
+                }
+                
+                SettingsNavItem {
+                    icon: "\u{f0e4}";
+                    label: "Performance";
+                    is-active: current-section == "performance";
+                    clicked => { change-section("performance"); }
+                }
+                
+                SettingsNavItem {
+                    icon: "\u{f085}";
+                    label: "Advanced";
+                    is-active: current-section == "advanced";
+                    clicked => { change-section("advanced"); }
+                }
+                
+                SettingsNavItem {
+                    icon: "\u{f05a}";
+                    label: "About";
+                    is-active: current-section == "about";
+                    clicked => { change-section("about"); }
+                }
+                
+                Rectangle { vertical-stretch: 1; }
+                
+                // Reset button
+                Rectangle {
+                    height: 40px;
+                    border-radius: 8px;
+                    background: reset-touch.has-hover ? Theme.error.with-alpha(0.1) : transparent;
+                    
+                    animate background { duration: 150ms; }
+                    
+                    reset-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { reset-settings(); }
+                    }
+                    
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        spacing: 10px;
+                        alignment: start;
+                        
+                        Text {
+                            text: "\u{f021}";
+                            font-size: 14px;
+                            color: Theme.error;
+                            vertical-alignment: center;
+                        }
+                        
+                        Text {
+                            text: "Reset to Defaults";
+                            font-size: 13px;
+                            color: Theme.error;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Divider
+        Rectangle {
+            width: 1px;
+            background: Theme.border;
+        }
+        
+        // Settings content
+        Rectangle {
+            horizontal-stretch: 1;
+            
+            Flickable {
+                viewport-height: settings-content.preferred-height + 48px;
+                
+                settings-content := VerticalLayout {
+                    padding: 24px;
+                    spacing: 24px;
+                    
+                    // General Section
+                    if current-section == "general": VerticalLayout {
+                        spacing: 20px;
+                        
+                        Text {
+                            text: "General";
+                            font-size: 24px;
+                            font-weight: 700;
+                            color: Theme.text-primary;
+                        }
+                        
+                        SettingsGroup {
+                            title: "Language & Region";
+                            
+                            SettingsRow {
+                                label: "Language";
+                                description: "Select your preferred language";
+                                
+                                Rectangle {
+                                    width: 180px;
+                                    height: 40px;
+                                    border-radius: 8px;
+                                    background: Theme.surface-variant;
+                                    border-width: 1px;
+                                    border-color: Theme.border;
+                                    
+                                    HorizontalLayout {
+                                        padding-left: 12px;
+                                        padding-right: 12px;
+                                        alignment: space-between;
+                                        
+                                        Text {
+                                            text: settings.language;
+                                            font-size: 14px;
+                                            color: Theme.text-primary;
+                                            vertical-alignment: center;
+                                        }
+                                        
+                                        Text {
+                                            text: "\u{f107}";
+                                            font-size: 12px;
+                                            color: Theme.text-tertiary;
+                                            vertical-alignment: center;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        SettingsGroup {
+                            title: "Launcher Behavior";
+                            
+                            SettingsToggle {
+                                label: "Auto-update launcher";
+                                description: "Automatically check for and install updates";
+                                enabled: settings.auto-update;
+                                toggled(value) => { settings.auto-update = value; }
+                            }
+                            
+                            SettingsToggle {
+                                label: "Minimize on game launch";
+                                description: "Minimize the launcher when starting Minecraft";
+                                enabled: settings.minimize-on-launch;
+                                toggled(value) => { settings.minimize-on-launch = value; }
+                            }
+                            
+                            SettingsToggle {
+                                label: "Close after game launch";
+                                description: "Close the launcher after Minecraft starts";
+                                enabled: settings.close-on-launch;
+                                toggled(value) => { settings.close-on-launch = value; }
+                            }
+                            
+                            SettingsToggle {
+                                label: "Show news on home page";
+                                description: "Display Minecraft news and updates";
+                                enabled: settings.show-news;
+                                toggled(value) => { settings.show-news = value; }
+                            }
+                        }
+                    }
+                    
+                    // Appearance Section
+                    if current-section == "appearance": VerticalLayout {
+                        spacing: 20px;
+                        
+                        Text {
+                            text: "Appearance";
+                            font-size: 24px;
+                            font-weight: 700;
+                            color: Theme.text-primary;
+                        }
+                        
+                        SettingsGroup {
+                            title: "Theme";
+                            
+                            // Theme grid
+                            HorizontalLayout {
+                                spacing: 12px;
+                                
+                                for theme-name in available-themes: ThemeCard {
+                                    name: theme-name;
+                                    is-selected: settings.theme-name == theme-name;
+                                    clicked => { apply-theme(theme-name); }
+                                }
+                            }
+                        }
+                        
+                        SettingsGroup {
+                            title: "Accent Color";
+                            
+                            HorizontalLayout {
+                                spacing: 10px;
+                                
+                                ColorSwatch { color-value: #00d9ff; is-selected: true; }
+                                ColorSwatch { color-value: #ff6b6b; }
+                                ColorSwatch { color-value: #4ecdc4; }
+                                ColorSwatch { color-value: #ffe66d; }
+                                ColorSwatch { color-value: #a855f7; }
+                                ColorSwatch { color-value: #f97316; }
+                                ColorSwatch { color-value: #22c55e; }
+                                ColorSwatch { color-value: #ec4899; }
+                            }
+                        }
+                        
+                        SettingsGroup {
+                            title: "Visual Effects";
+                            
+                            SettingsToggle {
+                                label: "Blur effects";
+                                description: "Enable glassmorphism and blur backgrounds";
+                                enabled: settings.use-blur-effects;
+                                toggled(value) => { settings.use-blur-effects = value; }
+                            }
+                            
+                            SettingsSlider {
+                                label: "Animation speed";
+                                description: "Adjust the speed of UI animations";
+                                value: settings.animation-speed;
+                                min-value: 0.5;
+                                max-value: 2.0;
+                                changed(v) => { settings.animation-speed = v; }
+                            }
+                        }
+                    }
+                    
+                    // Java Section
+                    if current-section == "java": VerticalLayout {
+                        spacing: 20px;
+                        
+                        Text {
+                            text: "Java & Memory";
+                            font-size: 24px;
+                            font-weight: 700;
+                            color: Theme.text-primary;
+                        }
+                        
+                        SettingsGroup {
+                            title: "Java Installation";
+                            
+                            SettingsRow {
+                                label: "Java Path";
+                                description: "Path to Java executable";
+                                
+                                HorizontalLayout {
+                                    spacing: 8px;
+                                    
+                                    Rectangle {
+                                        width: 280px;
+                                        height: 40px;
+                                        border-radius: 8px;
+                                        background: Theme.surface-variant;
+                                        border-width: 1px;
+                                        border-color: Theme.border;
+                                        clip: true;
+                                        
+                                        Text {
+                                            x: 12px;
+                                            text: settings.java-path;
+                                            font-size: 13px;
+                                            color: Theme.text-primary;
+                                            vertical-alignment: center;
+                                            overflow: elide;
+                                        }
+                                    }
+                                    
+                                    Rectangle {
+                                        width: 40px;
+                                        height: 40px;
+                                        border-radius: 8px;
+                                        background: browse-java.has-hover ? Theme.primary-hover : Theme.primary;
+                                        
+                                        animate background { duration: 150ms; }
+                                        
+                                        browse-java := TouchArea {
+                                            mouse-cursor: pointer;
+                                            clicked => { browse-java-path(); }
+                                        }
+                                        
+                                        Text {
+                                            text: "\u{f07c}";
+                                            font-size: 14px;
+                                            color: Theme.text-on-primary;
+                                            horizontal-alignment: center;
+                                            vertical-alignment: center;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        SettingsGroup {
+                            title: "Memory Allocation";
+                            
+                            SettingsSlider {
+                                label: "Minimum Memory (MB)";
+                                description: "Initial memory allocation";
+                                value: settings.min-memory;
+                                min-value: 512;
+                                max-value: 4096;
+                                step: 256;
+                            }
+                            
+                            SettingsSlider {
+                                label: "Maximum Memory (MB)";
+                                description: "Maximum memory allocation";
+                                value: settings.max-memory;
+                                min-value: 1024;
+                                max-value: 16384;
+                                step: 512;
+                            }
+                        }
+                        
+                        SettingsGroup {
+                            title: "JVM Arguments";
+                            
+                            Rectangle {
+                                height: 80px;
+                                border-radius: 8px;
+                                background: Theme.surface-variant;
+                                border-width: 1px;
+                                border-color: Theme.border;
+                                
+                                Text {
+                                    x: 12px;
+                                    y: 12px;
+                                    text: settings.jvm-args;
+                                    font-size: 13px;
+                                    font-family: "monospace";
+                                    color: Theme.text-primary;
+                                    wrap: word-wrap;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Performance Section
+                    if current-section == "performance": VerticalLayout {
+                        spacing: 20px;
+                        
+                        Text {
+                            text: "Performance";
+                            font-size: 24px;
+                            font-weight: 700;
+                            color: Theme.text-primary;
+                        }
+                        
+                        SettingsGroup {
+                            title: "Downloads";
+                            
+                            SettingsSlider {
+                                label: "Concurrent Downloads";
+                                description: "Number of simultaneous downloads";
+                                value: settings.concurrent-downloads;
+                                min-value: 1;
+                                max-value: 16;
+                                step: 1;
+                            }
+                            
+                            SettingsToggle {
+                                label: "Enable download cache";
+                                description: "Cache downloaded files to speed up reinstalls";
+                                enabled: settings.use-cache;
+                                toggled(value) => { settings.use-cache = value; }
+                            }
+                        }
+                    }
+                    
+                    // Advanced Section
+                    if current-section == "advanced": VerticalLayout {
+                        spacing: 20px;
+                        
+                        Text {
+                            text: "Advanced";
+                            font-size: 24px;
+                            font-weight: 700;
+                            color: Theme.text-primary;
+                        }
+                        
+                        SettingsGroup {
+                            title: "Game Directory";
+                            
+                            SettingsRow {
+                                label: "Game Directory";
+                                description: "Location of Minecraft installation";
+                                
+                                HorizontalLayout {
+                                    spacing: 8px;
+                                    
+                                    Rectangle {
+                                        width: 280px;
+                                        height: 40px;
+                                        border-radius: 8px;
+                                        background: Theme.surface-variant;
+                                        border-width: 1px;
+                                        border-color: Theme.border;
+                                        clip: true;
+                                        
+                                        Text {
+                                            x: 12px;
+                                            text: settings.game-directory;
+                                            font-size: 13px;
+                                            color: Theme.text-primary;
+                                            vertical-alignment: center;
+                                            overflow: elide;
+                                        }
+                                    }
+                                    
+                                    Rectangle {
+                                        width: 40px;
+                                        height: 40px;
+                                        border-radius: 8px;
+                                        background: browse-dir.has-hover ? Theme.primary-hover : Theme.primary;
+                                        
+                                        animate background { duration: 150ms; }
+                                        
+                                        browse-dir := TouchArea {
+                                            mouse-cursor: pointer;
+                                            clicked => { browse-game-directory(); }
+                                        }
+                                        
+                                        Text {
+                                            text: "\u{f07c}";
+                                            font-size: 14px;
+                                            color: Theme.text-on-primary;
+                                            horizontal-alignment: center;
+                                            vertical-alignment: center;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        SettingsGroup {
+                            title: "Developer Options";
+                            
+                            SettingsToggle {
+                                label: "Keep launcher open";
+                                description: "Keep the launcher running while playing";
+                                enabled: settings.keep-launcher-open;
+                                toggled(value) => { settings.keep-launcher-open = value; }
+                            }
+                            
+                            SettingsToggle {
+                                label: "Show game console";
+                                description: "Display Minecraft console output";
+                                enabled: settings.show-console;
+                                toggled(value) => { settings.show-console = value; }
+                            }
+                        }
+                    }
+                    
+                    // About Section
+                    if current-section == "about": VerticalLayout {
+                        spacing: 20px;
+                        
+                        Text {
+                            text: "About";
+                            font-size: 24px;
+                            font-weight: 700;
+                            color: Theme.text-primary;
+                        }
+                        
+                        GlassCard {
+                            VerticalLayout {
+                                padding: 24px;
+                                spacing: 16px;
+                                alignment: center;
+                                
+                                // Logo
+                                Rectangle {
+                                    width: 80px;
+                                    height: 80px;
+                                    border-radius: 16px;
+                                    background: @linear-gradient(135deg, Theme.primary, Theme.accent);
+                                    
+                                    Text {
+                                        text: "K";
+                                        font-size: 48px;
+                                        font-weight: 800;
+                                        color: white;
+                                        horizontal-alignment: center;
+                                        vertical-alignment: center;
+                                    }
+                                }
+                                
+                                Text {
+                                    text: "Konami Client";
+                                    font-size: 28px;
+                                    font-weight: 700;
+                                    color: Theme.text-primary;
+                                    horizontal-alignment: center;
+                                }
+                                
+                                Text {
+                                    text: "Version 1.0.0";
+                                    font-size: 14px;
+                                    color: Theme.text-secondary;
+                                    horizontal-alignment: center;
+                                }
+                                
+                                Text {
+                                    text: "A revolutionary Minecraft launcher built with C++ and Slint";
+                                    font-size: 13px;
+                                    color: Theme.text-tertiary;
+                                    horizontal-alignment: center;
+                                }
+                                
+                                Rectangle { height: 16px; }
+                                
+                                HorizontalLayout {
+                                    spacing: 12px;
+                                    alignment: center;
+                                    
+                                    KonamiButton {
+                                        text: "GitHub";
+                                        variant: "secondary";
+                                    }
+                                    
+                                    KonamiButton {
+                                        text: "Discord";
+                                        variant: "secondary";
+                                    }
+                                    
+                                    KonamiButton {
+                                        text: "Website";
+                                        variant: "primary";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Save button
+                    Rectangle { height: 20px; }
+                    
+                    HorizontalLayout {
+                        alignment: end;
+                        
+                        KonamiButton {
+                            text: "Save Settings";
+                            variant: "primary";
+                            clicked => { save-settings(settings); }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Navigation item
+component SettingsNavItem inherits Rectangle {
+    in property <string> icon;
+    in property <string> label;
+    in property <bool> is-active;
+    
+    callback clicked();
+    
+    height: 40px;
+    border-radius: 8px;
+    background: is-active ? Theme.primary.with-alpha(0.15) : 
+                touch.has-hover ? Theme.surface-variant : transparent;
+    
+    animate background { duration: 150ms; }
+    
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+    
+    HorizontalLayout {
+        padding-left: 12px;
+        spacing: 10px;
+        
+        Text {
+            text: icon;
+            font-size: 14px;
+            color: is-active ? Theme.primary : Theme.text-secondary;
+            vertical-alignment: center;
+        }
+        
+        Text {
+            text: label;
+            font-size: 13px;
+            font-weight: is-active ? 600 : 400;
+            color: is-active ? Theme.primary : Theme.text-primary;
+            vertical-alignment: center;
+        }
+    }
+    
+    // Active indicator
+    if is-active: Rectangle {
+        x: 0px;
+        y: (parent.height - 20px) / 2;
+        width: 3px;
+        height: 20px;
+        border-radius: 0px 2px 2px 0px;
+        background: Theme.primary;
+    }
+}
+
+// Settings group container
+component SettingsGroup inherits Rectangle {
+    in property <string> title;
+    
+    border-radius: 12px;
+    background: Theme.surface;
+    border-width: 1px;
+    border-color: Theme.border;
+    
+    VerticalLayout {
+        padding: 20px;
+        spacing: 16px;
+        
+        Text {
+            text: title;
+            font-size: 14px;
+            font-weight: 600;
+            color: Theme.text-secondary;
+        }
+        
+        @children
+    }
+}
+
+// Settings row
+component SettingsRow inherits Rectangle {
+    in property <string> label;
+    in property <string> description;
+    
+    height: 56px;
+    
+    HorizontalLayout {
+        alignment: space-between;
+        
+        VerticalLayout {
+            alignment: center;
+            spacing: 2px;
+            
+            Text {
+                text: label;
+                font-size: 14px;
+                font-weight: 500;
+                color: Theme.text-primary;
+            }
+            
+            Text {
+                text: description;
+                font-size: 12px;
+                color: Theme.text-tertiary;
+            }
+        }
+        
+        @children
+    }
+}
+
+// Settings toggle
+component SettingsToggle inherits Rectangle {
+    in property <string> label;
+    in property <string> description;
+    in-out property <bool> enabled;
+    
+    callback toggled(bool);
+    
+    height: 56px;
+    
+    HorizontalLayout {
+        alignment: space-between;
+        
+        VerticalLayout {
+            alignment: center;
+            spacing: 2px;
+            
+            Text {
+                text: label;
+                font-size: 14px;
+                font-weight: 500;
+                color: Theme.text-primary;
+            }
+            
+            Text {
+                text: description;
+                font-size: 12px;
+                color: Theme.text-tertiary;
+            }
+        }
+        
+        // Toggle switch
+        Rectangle {
+            width: 48px;
+            height: 26px;
+            border-radius: 13px;
+            background: enabled ? Theme.primary : Theme.surface-variant;
+            
+            animate background { duration: 200ms; easing: ease-out; }
+            
+            TouchArea {
+                clicked => {
+                    enabled = !enabled;
+                    toggled(enabled);
+                }
+            }
+            
+            Rectangle {
+                x: enabled ? 24px : 2px;
+                y: 2px;
+                width: 22px;
+                height: 22px;
+                border-radius: 11px;
+                background: white;
+                
+                animate x { duration: 200ms; easing: ease-out; }
+            }
+        }
+    }
+}
+
+// Settings slider
+component SettingsSlider inherits Rectangle {
+    in property <string> label;
+    in property <string> description;
+    in-out property <float> value;
+    in property <float> min-value: 0;
+    in property <float> max-value: 100;
+    in property <float> step: 1;
+    
+    callback changed(float);
+    
+    height: 72px;
+    
+    VerticalLayout {
+        spacing: 8px;
+        
+        HorizontalLayout {
+            alignment: space-between;
+            
+            VerticalLayout {
+                spacing: 2px;
+                
+                Text {
+                    text: label;
+                    font-size: 14px;
+                    font-weight: 500;
+                    color: Theme.text-primary;
+                }
+                
+                Text {
+                    text: description;
+                    font-size: 12px;
+                    color: Theme.text-tertiary;
+                }
+            }
+            
+            Text {
+                text: round(value);
+                font-size: 14px;
+                font-weight: 600;
+                color: Theme.primary;
+                vertical-alignment: center;
+            }
+        }
+        
+        // Slider track
+        Rectangle {
+            height: 6px;
+            border-radius: 3px;
+            background: Theme.surface-variant;
+            
+            // Filled portion
+            Rectangle {
+                width: (value - min-value) / (max-value - min-value) * parent.width;
+                height: 100%;
+                border-radius: 3px;
+                background: Theme.primary;
+            }
+            
+            // Thumb
+            Rectangle {
+                x: (value - min-value) / (max-value - min-value) * (parent.width - 16px);
+                y: -5px;
+                width: 16px;
+                height: 16px;
+                border-radius: 8px;
+                background: Theme.primary;
+                border-width: 2px;
+                border-color: white;
+                
+                TouchArea {
+                    mouse-cursor: pointer;
+                    // Slider interaction would be handled via pointer events
+                }
+            }
+        }
+    }
+}
+
+// Theme card
+component ThemeCard inherits Rectangle {
+    in property <string> name;
+    in property <bool> is-selected;
+    
+    callback clicked();
+    
+    width: 100px;
+    height: 80px;
+    border-radius: 10px;
+    background: Theme.surface-variant;
+    border-width: is-selected ? 2px : 1px;
+    border-color: is-selected ? Theme.primary : Theme.border;
+    
+    animate border-color { duration: 150ms; }
+    animate border-width { duration: 150ms; }
+    
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+    
+    VerticalLayout {
+        padding: 8px;
+        alignment: end;
+        
+        Text {
+            text: name;
+            font-size: 11px;
+            font-weight: is-selected ? 600 : 400;
+            color: Theme.text-primary;
+            horizontal-alignment: center;
+        }
+    }
+    
+    // Selection indicator
+    if is-selected: Rectangle {
+        x: parent.width - 20px;
+        y: 4px;
+        width: 16px;
+        height: 16px;
+        border-radius: 8px;
+        background: Theme.primary;
+        
+        Text {
+            text: "\u{f00c}";
+            font-size: 10px;
+            color: white;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+}
+
+// Color swatch
+component ColorSwatch inherits Rectangle {
+    in property <color> color-value;
+    in property <bool> is-selected;
+    
+    callback clicked();
+    
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: color-value;
+    border-width: is-selected ? 3px : 0px;
+    border-color: white;
+    
+    animate border-width { duration: 150ms; }
+    
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+    
+    // Selection checkmark
+    if is-selected: Rectangle {
+        width: 16px;
+        height: 16px;
+        border-radius: 8px;
+        background: white.with-alpha(0.9);
+        
+        Text {
+            text: "\u{f00c}";
+            font-size: 10px;
+            color: color-value;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+}

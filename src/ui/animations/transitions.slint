@@ -1,0 +1,245 @@
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║                   KONAMI CLIENT - TRANSITIONS                    ║
+// ║  Premium page transitions, micro-interactions, fluid motion     ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+import { Theme } from "../themes/base.slint";
+
+// ═══════════════════════════════════════════════════════════════════
+// FADE IN/OUT TRANSITION
+// ═══════════════════════════════════════════════════════════════════
+export component FadeIn inherits Rectangle {
+    in property <bool> show: true;
+    in property <duration> anim-duration: 250ms;
+    
+    opacity: show ? 1.0 : 0.0;
+    animate opacity { duration: anim-duration; easing: ease-in-out; }
+    
+    @children
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SLIDE TRANSITIONS
+// ═══════════════════════════════════════════════════════════════════
+export component SlideUp inherits Rectangle {
+    in property <bool> show: true;
+    in property <duration> anim-duration: 350ms;
+    in property <length> offset: 40px;
+    
+    opacity: show ? 1.0 : 0.0;
+    y: show ? 0px : offset;
+    
+    animate opacity { duration: anim-duration; easing: cubic-bezier(0.0, 0.0, 0.2, 1.0); }
+    animate y { duration: anim-duration; easing: cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    
+    @children
+}
+
+export component SlideRight inherits Rectangle {
+    in property <bool> show: true;
+    in property <duration> anim-duration: 300ms;
+    in property <length> offset: -30px;
+    
+    opacity: show ? 1.0 : 0.0;
+    x: show ? 0px : offset;
+    
+    animate opacity { duration: anim-duration; easing: ease-out; }
+    animate x { duration: anim-duration; easing: cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    
+    @children
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SCALE TRANSITION
+// ═══════════════════════════════════════════════════════════════════
+export component ScaleIn inherits Rectangle {
+    in property <bool> show: true;
+    in property <duration> anim-duration: 300ms;
+    
+    opacity: show ? 1.0 : 0.0;
+    
+    animate opacity { duration: anim-duration; easing: ease-in-out; }
+    
+    @children
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// STAGGER REVEAL - Animates children with stagger delay
+// ═══════════════════════════════════════════════════════════════════
+export component StaggerItem inherits Rectangle {
+    in property <bool> show: true;
+    in property <int> index: 0;
+    in property <duration> base-delay: 50ms;
+    in property <duration> anim-duration: 400ms;
+    
+    // Each item appears with progressive delay
+    property <duration> total-delay: base-delay * index;
+    
+    opacity: show ? 1.0 : 0.0;
+    y: show ? 0px : 20px;
+    
+    animate opacity { 
+        duration: anim-duration; 
+        delay: total-delay;
+        easing: cubic-bezier(0.0, 0.0, 0.2, 1.0); 
+    }
+    animate y { 
+        duration: anim-duration; 
+        delay: total-delay;
+        easing: cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    }
+    
+    @children
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PULSE ANIMATION (for loading, notifications, etc.)
+// ═══════════════════════════════════════════════════════════════════
+export component PulseIndicator inherits Rectangle {
+    in property <color> pulse-color: Theme.primary;
+    in property <length> dot-size: 10px;
+    
+    width: dot-size;
+    height: dot-size;
+    border-radius: dot-size / 2;
+    background: pulse-color;
+    
+    // Outer pulse ring
+    Rectangle {
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        width: parent.width + 12px;
+        height: parent.height + 12px;
+        border-radius: self.width / 2;
+        background: transparent;
+        border-width: 2px;
+        border-color: pulse-color.with-alpha(0.4);
+        
+        animate border-color {
+            duration: 1200ms;
+            iteration-count: -1;
+            easing: ease-in-out;
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SHIMMER EFFECT (skeleton loading)
+// ═══════════════════════════════════════════════════════════════════
+export component ShimmerEffect inherits Rectangle {
+    in property <length> shimmer-width: 200px;
+    in property <color> base-color: Theme.colors.skeleton-base;
+    in property <color> shine-color: Theme.colors.skeleton-shine;
+    in property <length> item-height: 20px;
+    
+    height: item-height;
+    border-radius: 6px;
+    background: base-color;
+    clip: true;
+    
+    // Shimmer overlay
+    Rectangle {
+        y: 0;
+        width: shimmer-width;
+        height: parent.height;
+        background: @linear-gradient(90deg, transparent 0%, shine-color 50%, transparent 100%);
+        
+        animate x {
+            duration: 1500ms;
+            iteration-count: -1;
+            easing: linear;
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// HOVER LIFT - Lifts element on hover with shadow
+// ═══════════════════════════════════════════════════════════════════
+export component HoverLift inherits Rectangle {
+    in property <bool> enabled: true;
+    
+    property <bool> hovered: touch.has-hover && enabled;
+    
+    y: hovered ? -4px : 0px;
+    
+    animate y { duration: 200ms; easing: cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    
+    touch := TouchArea {
+        mouse-cursor: enabled ? pointer : default;
+    }
+    
+    @children
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// GLOW BORDER - Animated glowing border effect
+// ═══════════════════════════════════════════════════════════════════
+export component GlowBorder inherits Rectangle {
+    in property <color> glow-color: Theme.primary;
+    in property <bool> active: false;
+    in property <float> glow-intensity: 0.5;
+    
+    border-width: active ? 2px : 1px;
+    border-color: active ? glow-color : Theme.border;
+    border-radius: Theme.radius.lg;
+    
+    animate border-color { duration: 300ms; easing: ease-in-out; }
+    animate border-width { duration: 200ms; easing: ease-out; }
+    
+    @children
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// TYPING INDICATOR
+// ═══════════════════════════════════════════════════════════════════
+export component TypingIndicator inherits HorizontalLayout {
+    spacing: 4px;
+    alignment: center;
+    
+    for i in 3: Rectangle {
+        width: 8px;
+        height: 8px;
+        border-radius: 4px;
+        background: Theme.text-muted;
+        
+        animate opacity {
+            duration: 600ms;
+            delay: i * 200ms;
+            iteration-count: -1;
+            easing: ease-in-out;
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RIPPLE EFFECT (Material-style touch feedback)
+// ═══════════════════════════════════════════════════════════════════
+export component RippleArea inherits Rectangle {
+    in property <color> ripple-color: Theme.primary.with-alpha(0.15);
+    
+    callback clicked();
+    
+    property <bool> active: touch.pressed;
+    
+    clip: true;
+    
+    Rectangle {
+        width: active ? parent.width * 2.5 : 0px;
+        height: self.width;
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        border-radius: self.width / 2;
+        background: ripple-color;
+        opacity: active ? 1 : 0;
+        
+        animate width { duration: 400ms; easing: ease-out; }
+        animate opacity { duration: 300ms; easing: ease-out; }
+    }
+    
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+    
+    @children
+}

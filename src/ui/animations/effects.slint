@@ -1,0 +1,244 @@
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║                   KONAMI CLIENT - VISUAL EFFECTS                 ║
+// ║  Premium particles, gradients, backgrounds                      ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+import { Theme } from "../themes/base.slint";
+
+// ═══════════════════════════════════════════════════════════════════
+// ANIMATED GRADIENT BACKGROUND
+// ═══════════════════════════════════════════════════════════════════
+export component GradientBackground inherits Rectangle {
+    in property <color> color-a: Theme.colors.gradient-start;
+    in property <color> color-b: Theme.colors.gradient-mid;
+    in property <color> color-c: Theme.colors.gradient-end;
+    in property <float> angle: 135.0;
+    
+    background: @linear-gradient(135deg, color-a 0%, color-b 50%, color-c 100%);
+    
+    animate background { duration: 2000ms; easing: ease-in-out; }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MESH GRADIENT (layered gradient spheres)
+// ═══════════════════════════════════════════════════════════════════
+export component MeshGradient inherits Rectangle {
+    in property <float> intensity: 0.15;
+    
+    clip: true;
+    
+    // Orb 1 - top-left
+    Rectangle {
+        x: -self.width * 0.3;
+        y: -self.height * 0.3;
+        width: parent.width * 0.7;
+        height: parent.width * 0.7;
+        border-radius: self.width / 2;
+        background: @radial-gradient(circle, 
+            Theme.colors.gradient-start.with-alpha(intensity) 0%, 
+            transparent 70%
+        );
+    }
+    
+    // Orb 2 - bottom-right
+    Rectangle {
+        x: parent.width * 0.4;
+        y: parent.height * 0.3;
+        width: parent.width * 0.8;
+        height: parent.width * 0.8;
+        border-radius: self.width / 2;
+        background: @radial-gradient(circle,
+            Theme.colors.gradient-end.with-alpha(intensity) 0%,
+            transparent 70%
+        );
+    }
+    
+    // Orb 3 - center
+    Rectangle {
+        x: parent.width * 0.2;
+        y: parent.height * 0.1;
+        width: parent.width * 0.5;
+        height: parent.width * 0.5;
+        border-radius: self.width / 2;
+        background: @radial-gradient(circle,
+            Theme.colors.gradient-mid.with-alpha(intensity * 0.7) 0%,
+            transparent 70%
+        );
+    }
+    
+    @children
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// FROSTED GLASS EFFECT
+// ═══════════════════════════════════════════════════════════════════
+export component FrostedGlass inherits Rectangle {
+    in property <float> frost-intensity: 0.08;
+    in property <length> frost-radius: 12px;
+    
+    background: Theme.surface.with-alpha(frost-intensity);
+    border-radius: frost-radius;
+    border-width: 1px;
+    border-color: #ffffff10;
+    
+    @children
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// GLASS CARD EFFECT 
+// ═══════════════════════════════════════════════════════════════════
+export component GlassPanel inherits Rectangle {
+    in property <float> opacity-level: 0.06;
+    in property <bool> show-border: true;
+    
+    background: #ffffff.with-alpha(opacity-level);
+    border-radius: Theme.radius.xl;
+    border-width: show-border ? 1px : 0px;
+    border-color: #ffffff12;
+    
+    @children
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// NEON TEXT GLOW
+// ═══════════════════════════════════════════════════════════════════
+export component NeonText inherits Rectangle {
+    in property <string> display-text;
+    in property <color> neon-color: Theme.primary;
+    in property <length> font-size: 24px;
+    in property <int> font-weight: 700;
+    
+    height: font-size * 1.5;
+    
+    // Glow layer (behind text)
+    Text {
+        text: display-text;
+        font-size: root.font-size;
+        font-weight: root.font-weight;
+        color: neon-color.with-alpha(0.3);
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+    
+    // Main text
+    Text {
+        text: display-text;
+        font-size: root.font-size;
+        font-weight: root.font-weight;
+        color: neon-color;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// GRADIENT TEXT 
+// ═══════════════════════════════════════════════════════════════════
+export component GradientText inherits Rectangle {
+    in property <string> display-text;
+    in property <color> from-color: Theme.colors.gradient-start;
+    in property <color> to-color: Theme.colors.gradient-end;
+    in property <length> font-size: 24px;
+    in property <int> font-weight: 700;
+    
+    height: font-size * 1.5;
+    
+    // Slint doesn't support gradient text directly, 
+    // so we layer colors for a similar effect
+    Text {
+        text: display-text;
+        font-size: root.font-size;
+        font-weight: root.font-weight;
+        color: from-color;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// NOISE TEXTURE OVERLAY
+// ═══════════════════════════════════════════════════════════════════
+export component NoiseOverlay inherits Rectangle {
+    in property <float> noise-opacity: 0.03;
+    
+    // Subtle dithering pattern
+    opacity: noise-opacity;
+    background: @linear-gradient(45deg, 
+        #ffffff08 25%, transparent 25%, transparent 50%, 
+        #ffffff08 50%, #ffffff08 75%, transparent 75%, transparent
+    );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// VIGNETTE EFFECT
+// ═══════════════════════════════════════════════════════════════════
+export component Vignette inherits Rectangle {
+    in property <float> intensity: 0.3;
+    
+    background: @radial-gradient(ellipse,
+        transparent 50%,
+        #000000.with-alpha(intensity) 100%
+    );
+    
+    @children
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SPOTLIGHT HOVER EFFECT
+// ═══════════════════════════════════════════════════════════════════
+export component SpotlightHover inherits Rectangle {
+    in property <bool> active: touch.has-hover;
+    
+    clip: true;
+    
+    Rectangle {
+        width: 200px;
+        height: 200px;
+        x: touch.mouse-x - 100px;
+        y: touch.mouse-y - 100px;
+        border-radius: 100px;
+        background: @radial-gradient(circle,
+            #ffffff08 0%,
+            transparent 70%
+        );
+        opacity: active ? 1 : 0;
+        
+        animate opacity { duration: 200ms; }
+    }
+    
+    touch := TouchArea {}
+    
+    @children
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ANIMATED STATUS DOT
+// ═══════════════════════════════════════════════════════════════════
+export component StatusDot inherits Rectangle {
+    in property <string> status: "online"; // online, away, busy, offline
+    
+    property <color> dot-color: 
+        status == "online" ? Theme.success :
+        status == "away" ? Theme.warning :
+        status == "busy" ? Theme.error :
+        Theme.colors.text-disabled;
+    
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+    background: dot-color;
+    
+    animate background { duration: 300ms; easing: ease-in-out; }
+    
+    // Pulse ring for online
+    if status == "online": Rectangle {
+        width: parent.width + 6px;
+        height: parent.height + 6px;
+        x: -3px;
+        y: -3px;
+        border-radius: self.width / 2;
+        border-width: 2px;
+        border-color: dot-color.with-alpha(0.3);
+        background: transparent;
+    }
+}

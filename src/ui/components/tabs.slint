@@ -1,0 +1,269 @@
+// ============================================================================
+// Konami Client - Tabs Component
+// Animated tab navigation with indicators
+// ============================================================================
+
+import { Theme } from "../theme/theme.slint";
+
+export struct TabItem {
+    id: string,
+    label: string,
+    icon: string,
+    badge: int,
+}
+
+export component KonamiTabs inherits Rectangle {
+    in property <[TabItem]> tabs;
+    in-out property <int> active-index: 0;
+    in property <bool> icons-only: false;
+    
+    callback tab-changed(int, string);
+    
+    property <duration> anim-duration: 250ms;
+    
+    width: 100%;
+    height: icons-only ? 48px : 44px;
+    background: Theme.surface;
+    border-radius: 12px;
+    
+    HorizontalLayout {
+        padding: 4px;
+        spacing: 4px;
+        
+        for tab[index] in tabs: Rectangle {
+            horizontal-stretch: 1;
+            height: 100%;
+            border-radius: 8px;
+            background: index == active-index ? Theme.primary : 
+                       (touch.has-hover ? Theme.surface-hover : transparent);
+            
+            animate background { duration: anim-duration; easing: ease-out; }
+            
+            HorizontalLayout {
+                padding-left: 12px;
+                padding-right: 12px;
+                spacing: 8px;
+                alignment: center;
+                
+                if tab.icon != "": Text {
+                    text: tab.icon;
+                    color: index == active-index ? white : Theme.text-secondary;
+                    font-size: 16px;
+                    
+                    animate color { duration: anim-duration; }
+                }
+                
+                if !icons-only: Text {
+                    text: tab.label;
+                    color: index == active-index ? white : Theme.text-secondary;
+                    font-size: 14px;
+                    font-weight: index == active-index ? 600 : 400;
+                    
+                    animate color { duration: anim-duration; }
+                }
+                
+                if tab.badge > 0: Rectangle {
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 10px;
+                    background: index == active-index ? white.with-alpha(0.2) : Theme.primary;
+                    
+                    Text {
+                        text: tab.badge > 99 ? "99+" : "\{tab.badge}";
+                        color: index == active-index ? white : white;
+                        font-size: 11px;
+                        font-weight: 600;
+                    }
+                }
+            }
+            
+            touch := TouchArea {
+                mouse-cursor: pointer;
+                
+                clicked => {
+                    active-index = index;
+                    tab-changed(index, tab.id);
+                }
+            }
+        }
+    }
+}
+
+// Underline style tabs
+export component KonamiUnderlineTabs inherits Rectangle {
+    in property <[TabItem]> tabs;
+    in-out property <int> active-index: 0;
+    
+    callback tab-changed(int, string);
+    
+    property <duration> anim-duration: 250ms;
+    property <length> indicator-x: 0px;
+    property <length> indicator-width: 0px;
+    
+    width: 100%;
+    height: 48px;
+    
+    HorizontalLayout {
+        spacing: 24px;
+        
+        for tab[index] in tabs: Rectangle {
+            height: 100%;
+            
+            VerticalLayout {
+                alignment: center;
+                
+                HorizontalLayout {
+                    spacing: 8px;
+                    alignment: center;
+                    
+                    if tab.icon != "": Text {
+                        text: tab.icon;
+                        color: index == active-index ? Theme.primary : Theme.text-muted;
+                        font-size: 16px;
+                        
+                        animate color { duration: anim-duration; }
+                    }
+                    
+                    Text {
+                        text: tab.label;
+                        color: index == active-index ? Theme.primary : Theme.text-muted;
+                        font-size: 14px;
+                        font-weight: index == active-index ? 600 : 400;
+                        
+                        animate color { duration: anim-duration; }
+                    }
+                    
+                    if tab.badge > 0: Rectangle {
+                        width: 20px;
+                        height: 20px;
+                        border-radius: 10px;
+                        background: Theme.primary;
+                        
+                        Text {
+                            text: "\{tab.badge}";
+                            color: white;
+                            font-size: 11px;
+                            font-weight: 600;
+                        }
+                    }
+                }
+            }
+            
+            TouchArea {
+                mouse-cursor: pointer;
+                
+                clicked => {
+                    active-index = index;
+                    tab-changed(index, tab.id);
+                }
+            }
+        }
+    }
+    
+    // Bottom border
+    Rectangle {
+        y: parent.height - 2px;
+        width: 100%;
+        height: 2px;
+        background: Theme.border;
+        
+        // Active indicator
+        Rectangle {
+            x: active-index * (parent.width / tabs.length);
+            width: parent.width / tabs.length;
+            height: 100%;
+            background: Theme.primary;
+            border-radius: 1px;
+            
+            animate x { duration: anim-duration; easing: ease-out; }
+        }
+    }
+}
+
+// Vertical tabs (for sidebars)
+export component KonamiVerticalTabs inherits Rectangle {
+    in property <[TabItem]> tabs;
+    in-out property <int> active-index: 0;
+    in property <bool> collapsed: false;
+    
+    callback tab-changed(int, string);
+    
+    property <duration> anim-duration: 200ms;
+    
+    width: collapsed ? 64px : 200px;
+    
+    animate width { duration: 300ms; easing: ease-out; }
+    
+    VerticalLayout {
+        padding: 8px;
+        spacing: 4px;
+        
+        for tab[index] in tabs: Rectangle {
+            height: 44px;
+            border-radius: 10px;
+            background: index == active-index ? Theme.primary.with-alpha(0.15) :
+                       (touch.has-hover ? Theme.surface-hover : transparent);
+            
+            animate background { duration: anim-duration; }
+            
+            HorizontalLayout {
+                padding-left: collapsed ? 0px : 12px;
+                padding-right: collapsed ? 0px : 12px;
+                spacing: 12px;
+                alignment: collapsed ? center : start;
+                
+                Text {
+                    vertical-alignment: center;
+                    text: tab.icon;
+                    color: index == active-index ? Theme.primary : Theme.text-secondary;
+                    font-size: 18px;
+                    
+                    animate color { duration: anim-duration; }
+                }
+                
+                if !collapsed: Text {
+                    vertical-alignment: center;
+                    horizontal-stretch: 1;
+                    text: tab.label;
+                    color: index == active-index ? Theme.primary : Theme.text-secondary;
+                    font-size: 14px;
+                    font-weight: index == active-index ? 600 : 400;
+                    
+                    animate color { duration: anim-duration; }
+                }
+                
+                if !collapsed && tab.badge > 0: Rectangle {
+                    width: 24px;
+                    height: 20px;
+                    border-radius: 10px;
+                    background: Theme.primary;
+                    
+                    Text {
+                        text: "\{tab.badge}";
+                        color: white;
+                        font-size: 11px;
+                        font-weight: 600;
+                    }
+                }
+            }
+            
+            // Active indicator bar
+            if index == active-index: Rectangle {
+                x: 0;
+                width: 3px;
+                height: 24px;
+                border-radius: 0 3px 3px 0;
+                background: Theme.primary;
+            }
+            
+            touch := TouchArea {
+                mouse-cursor: pointer;
+                
+                clicked => {
+                    active-index = index;
+                    tab-changed(index, tab.id);
+                }
+            }
+        }
+    }
+}

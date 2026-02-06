@@ -1,0 +1,262 @@
+// ============================================================================
+// Konami Client - Loading Components
+// Spinners, skeletons, and loading states
+// ============================================================================
+
+import { Theme } from "../theme/theme.slint";
+
+// Spinning loader
+export component KonamiSpinner inherits Rectangle {
+    in property <length> size: 40px;
+    in property <color> spinner-color: Theme.primary;
+    in property <int> thickness: 3;
+    
+    property <float> rotation: 0;
+    
+    width: size;
+    height: size;
+    
+    // Outer ring
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        border-radius: size / 2;
+        border-width: thickness * 1px;
+        border-color: spinner-color.with-alpha(0.2);
+    }
+    
+    // Spinning arc
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        border-radius: size / 2;
+        
+        // We simulate the arc with a clipped rectangle
+        clip: true;
+        
+        Rectangle {
+            width: 100%;
+            height: 100%;
+            border-radius: size / 2;
+            border-width: thickness * 1px;
+            border-color: spinner-color;
+            
+            // Rotation animation
+            rotation-angle: rotation * 1deg;
+            
+            animate rotation-angle {
+                duration: 1000ms;
+                iteration-count: -1;
+                easing: linear;
+            }
+        }
+    }
+    
+    init => {
+        rotation = 360;
+    }
+}
+
+// Pulsing dot loader
+export component KonamiDotsLoader inherits Rectangle {
+    in property <length> dot-size: 10px;
+    in property <color> dot-color: Theme.primary;
+    
+    property <float> phase1: 0;
+    property <float> phase2: 0;
+    property <float> phase3: 0;
+    
+    width: dot-size * 5;
+    height: dot-size;
+    
+    HorizontalLayout {
+        spacing: dot-size / 2;
+        alignment: center;
+        
+        Rectangle {
+            width: dot-size;
+            height: dot-size;
+            border-radius: dot-size / 2;
+            background: dot-color;
+            opacity: 0.3 + phase1 * 0.7;
+            
+            animate opacity {
+                duration: 600ms;
+                iteration-count: -1;
+                easing: ease-in-out;
+            }
+        }
+        
+        Rectangle {
+            width: dot-size;
+            height: dot-size;
+            border-radius: dot-size / 2;
+            background: dot-color;
+            opacity: 0.3 + phase2 * 0.7;
+            
+            animate opacity {
+                duration: 600ms;
+                delay: 150ms;
+                iteration-count: -1;
+                easing: ease-in-out;
+            }
+        }
+        
+        Rectangle {
+            width: dot-size;
+            height: dot-size;
+            border-radius: dot-size / 2;
+            background: dot-color;
+            opacity: 0.3 + phase3 * 0.7;
+            
+            animate opacity {
+                duration: 600ms;
+                delay: 300ms;
+                iteration-count: -1;
+                easing: ease-in-out;
+            }
+        }
+    }
+    
+    init => {
+        phase1 = 1;
+        phase2 = 1;
+        phase3 = 1;
+    }
+}
+
+// Skeleton loading placeholder
+export component KonamiSkeleton inherits Rectangle {
+    in property <length> skeleton-width: 100%;
+    in property <length> skeleton-height: 20px;
+    in property <length> skeleton-radius: 8px;
+    
+    property <float> shimmer-position: -1;
+    
+    width: skeleton-width;
+    height: skeleton-height;
+    border-radius: skeleton-radius;
+    background: Theme.surface-hover;
+    clip: true;
+    
+    // Shimmer effect
+    Rectangle {
+        x: shimmer-position * (parent.width + 100px) - 100px;
+        width: 100px;
+        height: 100%;
+        background: @linear-gradient(90deg, 
+            transparent 0%, 
+            Theme.surface.with-alpha(0.5) 50%, 
+            transparent 100%);
+        
+        animate x {
+            duration: 1500ms;
+            iteration-count: -1;
+            easing: ease-in-out;
+        }
+    }
+    
+    init => {
+        shimmer-position = 2;
+    }
+}
+
+// Card skeleton
+export component KonamiCardSkeleton inherits Rectangle {
+    width: 100%;
+    height: 200px;
+    border-radius: 16px;
+    background: Theme.surface;
+    border-width: 1px;
+    border-color: Theme.border;
+    
+    VerticalLayout {
+        padding: 16px;
+        spacing: 12px;
+        
+        // Image placeholder
+        KonamiSkeleton {
+            skeleton-height: 100px;
+            skeleton-radius: 12px;
+        }
+        
+        // Title
+        KonamiSkeleton {
+            skeleton-width: 70%;
+            skeleton-height: 20px;
+        }
+        
+        // Subtitle
+        KonamiSkeleton {
+            skeleton-width: 50%;
+            skeleton-height: 16px;
+        }
+    }
+}
+
+// Full page loading overlay
+export component KonamiLoadingOverlay inherits Rectangle {
+    in property <string> message: "Loading...";
+    in-out property <bool> visible: false;
+    
+    property <duration> anim-duration: 300ms;
+    
+    width: 100%;
+    height: 100%;
+    background: Theme.background.with-alpha(0.9);
+    opacity: visible ? 1 : 0;
+    
+    animate opacity { duration: anim-duration; easing: ease-out; }
+    
+    VerticalLayout {
+        alignment: center;
+        spacing: 24px;
+        
+        KonamiSpinner {
+            size: 60px;
+        }
+        
+        Text {
+            text: message;
+            color: Theme.text-primary;
+            font-size: 16px;
+            horizontal-alignment: center;
+        }
+    }
+    
+    // Block interactions
+    TouchArea {
+        enabled: visible;
+    }
+}
+
+// Progress loading bar (indeterminate)
+export component KonamiIndeterminateProgress inherits Rectangle {
+    in property <color> progress-color: Theme.primary;
+    
+    property <float> position: 0;
+    
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: progress-color.with-alpha(0.2);
+    clip: true;
+    
+    Rectangle {
+        x: (position - 0.3) * parent.width;
+        width: 30%;
+        height: 100%;
+        border-radius: 2px;
+        background: progress-color;
+        
+        animate x {
+            duration: 1500ms;
+            iteration-count: -1;
+            easing: ease-in-out;
+        }
+    }
+    
+    init => {
+        position = 1.3;
+    }
+}

@@ -1,0 +1,645 @@
+// Konami Client - Skins Page
+// Revolutionary 3D skin viewer and management
+
+import { Theme, KonamiTheme } from "../theme/theme.slint";
+import { KonamiCard, GlassCard } from "../components/card.slint";
+import { KonamiButton, IconButton } from "../components/button.slint";
+import { SearchInput } from "../components/input.slint";
+
+export struct SkinInfo {
+    id: string,
+    name: string,
+    texture-url: string,
+    model-type: string, // "classic", "slim"
+    is-active: bool,
+    is-favorite: bool,
+    created-at: string,
+}
+
+export struct CapeInfo {
+    id: string,
+    name: string,
+    texture-url: string,
+    is-active: bool,
+    source: string, // "minecraft", "optifine", "custom"
+}
+
+export component SkinsPage inherits Rectangle {
+    in property <[SkinInfo]> skins;
+    in property <[CapeInfo]> capes;
+    in property <SkinInfo> active-skin;
+    in property <CapeInfo> active-cape;
+    in property <float> viewer-rotation: 0;
+    in property <bool> viewer-playing-animation: false;
+    
+    callback select-skin(string);
+    callback delete-skin(string);
+    callback upload-skin();
+    callback import-from-url();
+    callback toggle-favorite(string);
+    callback apply-skin(string);
+    callback select-cape(string);
+    callback rotate-viewer(float);
+    callback toggle-animation();
+    callback export-skin(string);
+    
+    background: Theme.background;
+    
+    HorizontalLayout {
+        // Left panel - 3D Viewer
+        Rectangle {
+            width: 400px;
+            background: Theme.surface;
+            
+            VerticalLayout {
+                padding: 24px;
+                spacing: 16px;
+                
+                Text {
+                    text: "Preview";
+                    font-size: 18px;
+                    font-weight: 600;
+                    color: Theme.text-primary;
+                }
+                
+                // 3D Viewer container
+                Rectangle {
+                    vertical-stretch: 1;
+                    border-radius: 16px;
+                    background: @linear-gradient(180deg, #1a1a2e, #16213e);
+                    
+                    // This would be replaced by actual 3D rendering
+                    // Using placeholder representation
+                    VerticalLayout {
+                        alignment: center;
+                        
+                        // Skin preview placeholder
+                        Rectangle {
+                            width: 200px;
+                            height: 300px;
+                            
+                            // Player model representation
+                            VerticalLayout {
+                                alignment: center;
+                                spacing: 0px;
+                                
+                                // Head
+                                Rectangle {
+                                    width: 64px;
+                                    height: 64px;
+                                    background: @linear-gradient(135deg, #8b5a2b, #654321);
+                                    border-radius: 4px;
+                                }
+                                
+                                // Body
+                                Rectangle {
+                                    width: 64px;
+                                    height: 96px;
+                                    background: @linear-gradient(135deg, #4169e1, #1e90ff);
+                                    border-radius: 2px;
+                                }
+                                
+                                // Legs
+                                HorizontalLayout {
+                                    spacing: 2px;
+                                    alignment: center;
+                                    
+                                    Rectangle {
+                                        width: 30px;
+                                        height: 80px;
+                                        background: @linear-gradient(135deg, #2f4f4f, #1a1a1a);
+                                        border-radius: 2px;
+                                    }
+                                    
+                                    Rectangle {
+                                        width: 30px;
+                                        height: 80px;
+                                        background: @linear-gradient(135deg, #2f4f4f, #1a1a1a);
+                                        border-radius: 2px;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Rotation indicator
+                        Text {
+                            text: "Drag to rotate";
+                            font-size: 12px;
+                            color: Theme.text-tertiary;
+                            horizontal-alignment: center;
+                        }
+                    }
+                    
+                    // Rotation touch area
+                    TouchArea {
+                        mouse-cursor: grab;
+                        // Would handle drag rotation
+                    }
+                }
+                
+                // Viewer controls
+                HorizontalLayout {
+                    alignment: center;
+                    spacing: 12px;
+                    
+                    // Zoom out
+                    Rectangle {
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 8px;
+                        background: Theme.surface-variant;
+                        
+                        TouchArea { mouse-cursor: pointer; }
+                        
+                        Text {
+                            text: "\u{f010}";
+                            font-size: 14px;
+                            color: Theme.text-secondary;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                    
+                    // Reset rotation
+                    Rectangle {
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 8px;
+                        background: Theme.surface-variant;
+                        
+                        TouchArea { 
+                            mouse-cursor: pointer;
+                            clicked => { rotate-viewer(0); }
+                        }
+                        
+                        Text {
+                            text: "\u{f021}";
+                            font-size: 14px;
+                            color: Theme.text-secondary;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                    
+                    // Zoom in
+                    Rectangle {
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 8px;
+                        background: Theme.surface-variant;
+                        
+                        TouchArea { mouse-cursor: pointer; }
+                        
+                        Text {
+                            text: "\u{f00e}";
+                            font-size: 14px;
+                            color: Theme.text-secondary;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                    
+                    Rectangle { width: 20px; }
+                    
+                    // Play animation
+                    Rectangle {
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 8px;
+                        background: viewer-playing-animation ? Theme.primary : Theme.surface-variant;
+                        
+                        TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { toggle-animation(); }
+                        }
+                        
+                        Text {
+                            text: viewer-playing-animation ? "\u{f04c}" : "\u{f04b}";
+                            font-size: 14px;
+                            color: viewer-playing-animation ? Theme.text-on-primary : Theme.text-secondary;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+                
+                // Current skin info
+                GlassCard {
+                    HorizontalLayout {
+                        padding: 16px;
+                        spacing: 12px;
+                        
+                        Rectangle {
+                            width: 48px;
+                            height: 48px;
+                            border-radius: 8px;
+                            background: Theme.primary.with-alpha(0.2);
+                            
+                            Text {
+                                text: "\u{f007}";
+                                font-size: 24px;
+                                color: Theme.primary;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                        
+                        VerticalLayout {
+                            horizontal-stretch: 1;
+                            alignment: center;
+                            spacing: 4px;
+                            
+                            Text {
+                                text: active-skin.name;
+                                font-size: 14px;
+                                font-weight: 600;
+                                color: Theme.text-primary;
+                            }
+                            
+                            Text {
+                                text: active-skin.model-type == "slim" ? "Slim Model" : "Classic Model";
+                                font-size: 12px;
+                                color: Theme.text-secondary;
+                            }
+                        }
+                        
+                        // Status badge
+                        Rectangle {
+                            width: 60px;
+                            height: 24px;
+                            border-radius: 6px;
+                            background: Theme.success.with-alpha(0.15);
+                            
+                            Text {
+                                text: "Active";
+                                font-size: 11px;
+                                font-weight: 500;
+                                color: Theme.success;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Divider
+        Rectangle {
+            width: 1px;
+            background: Theme.border;
+        }
+        
+        // Right panel - Skin library
+        Rectangle {
+            horizontal-stretch: 1;
+            
+            VerticalLayout {
+                padding: 24px;
+                spacing: 20px;
+                
+                // Header with tabs
+                HorizontalLayout {
+                    alignment: space-between;
+                    
+                    // Tabs
+                    HorizontalLayout {
+                        spacing: 8px;
+                        
+                        TabButton {
+                            text: "Skins";
+                            is-active: true;
+                        }
+                        
+                        TabButton {
+                            text: "Capes";
+                            is-active: false;
+                        }
+                    }
+                    
+                    // Actions
+                    HorizontalLayout {
+                        spacing: 12px;
+                        
+                        Rectangle {
+                            width: 120px;
+                            height: 36px;
+                            border-radius: 8px;
+                            background: url-touch.has-hover ? Theme.surface-variant : Theme.surface;
+                            border-width: 1px;
+                            border-color: Theme.border;
+                            
+                            url-touch := TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => { import-from-url(); }
+                            }
+                            
+                            HorizontalLayout {
+                                alignment: center;
+                                spacing: 6px;
+                                
+                                Text {
+                                    text: "\u{f0c1}";
+                                    font-size: 12px;
+                                    color: Theme.text-secondary;
+                                    vertical-alignment: center;
+                                }
+                                
+                                Text {
+                                    text: "From URL";
+                                    font-size: 13px;
+                                    color: Theme.text-primary;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                        
+                        Rectangle {
+                            width: 120px;
+                            height: 36px;
+                            border-radius: 8px;
+                            background: upload-touch.has-hover ? Theme.primary-hover : Theme.primary;
+                            
+                            upload-touch := TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => { upload-skin(); }
+                            }
+                            
+                            HorizontalLayout {
+                                alignment: center;
+                                spacing: 6px;
+                                
+                                Text {
+                                    text: "\u{f093}";
+                                    font-size: 12px;
+                                    color: Theme.text-on-primary;
+                                    vertical-alignment: center;
+                                }
+                                
+                                Text {
+                                    text: "Upload";
+                                    font-size: 13px;
+                                    font-weight: 500;
+                                    color: Theme.text-on-primary;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Search
+                SearchInput {
+                    placeholder: "Search skins...";
+                }
+                
+                // Skins grid
+                Flickable {
+                    vertical-stretch: 1;
+                    viewport-height: skins-grid.preferred-height;
+                    
+                    skins-grid := VerticalLayout {
+                        spacing: 16px;
+                        
+                        // Grid layout (simulated with rows)
+                        for i in 10: HorizontalLayout {
+                            spacing: 16px;
+                            
+                            SkinGridItem {
+                                skin-info: skins[i * 3] ?? {
+                                    id: "default",
+                                    name: "Steve",
+                                    model-type: "classic",
+                                    is-active: false,
+                                    is-favorite: false,
+                                };
+                                select-clicked(id) => { select-skin(id); }
+                                apply-clicked(id) => { apply-skin(id); }
+                                favorite-clicked(id) => { toggle-favorite(id); }
+                                delete-clicked(id) => { delete-skin(id); }
+                            }
+                            
+                            SkinGridItem {
+                                skin-info: skins[i * 3 + 1] ?? {
+                                    id: "default2",
+                                    name: "Alex",
+                                    model-type: "slim",
+                                    is-active: false,
+                                    is-favorite: false,
+                                };
+                                select-clicked(id) => { select-skin(id); }
+                                apply-clicked(id) => { apply-skin(id); }
+                                favorite-clicked(id) => { toggle-favorite(id); }
+                                delete-clicked(id) => { delete-skin(id); }
+                            }
+                            
+                            Rectangle { horizontal-stretch: 1; }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Tab button
+component TabButton inherits Rectangle {
+    in property <string> text;
+    in property <bool> is-active;
+    
+    callback clicked();
+    
+    width: 80px;
+    height: 36px;
+    border-radius: 8px;
+    background: is-active ? Theme.primary.with-alpha(0.15) : transparent;
+    
+    animate background { duration: 150ms; }
+    
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+    
+    Text {
+        text: root.text;
+        font-size: 14px;
+        font-weight: is-active ? 600 : 400;
+        color: is-active ? Theme.primary : Theme.text-secondary;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+}
+
+// Skin grid item
+component SkinGridItem inherits Rectangle {
+    in property <SkinInfo> skin-info;
+    
+    callback select-clicked(string);
+    callback apply-clicked(string);
+    callback favorite-clicked(string);
+    callback delete-clicked(string);
+    
+    width: 140px;
+    height: 180px;
+    border-radius: 12px;
+    background: Theme.surface;
+    border-width: skin-info.is-active ? 2px : 1px;
+    border-color: skin-info.is-active ? Theme.primary : 
+                  touch.has-hover ? Theme.primary.with-alpha(0.3) : Theme.border;
+    
+    animate border-color { duration: 150ms; }
+    
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { select-clicked(skin-info.id); }
+    }
+    
+    VerticalLayout {
+        padding: 8px;
+        spacing: 8px;
+        
+        // Skin preview
+        Rectangle {
+            height: 100px;
+            border-radius: 8px;
+            background: @linear-gradient(180deg, #1a1a2e, #16213e);
+            
+            // Mini player model
+            VerticalLayout {
+                alignment: center;
+                
+                Rectangle {
+                    width: 24px;
+                    height: 24px;
+                    background: #8b5a2b;
+                    border-radius: 2px;
+                }
+                
+                Rectangle {
+                    width: 24px;
+                    height: 36px;
+                    background: #4169e1;
+                }
+                
+                HorizontalLayout {
+                    spacing: 1px;
+                    alignment: center;
+                    
+                    Rectangle { width: 11px; height: 30px; background: #2f4f4f; }
+                    Rectangle { width: 11px; height: 30px; background: #2f4f4f; }
+                }
+            }
+            
+            // Favorite button overlay
+            Rectangle {
+                x: parent.width - 28px;
+                y: 4px;
+                width: 24px;
+                height: 24px;
+                border-radius: 6px;
+                background: #000000.with-alpha(0.5);
+                
+                TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { favorite-clicked(skin-info.id); }
+                }
+                
+                Text {
+                    text: skin-info.is-favorite ? "\u{f005}" : "\u{f006}";
+                    font-size: 12px;
+                    color: skin-info.is-favorite ? #fbbf24 : white;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+            
+            // Active indicator
+            if skin-info.is-active: Rectangle {
+                x: 4px;
+                y: 4px;
+                width: 24px;
+                height: 24px;
+                border-radius: 6px;
+                background: Theme.success;
+                
+                Text {
+                    text: "\u{f00c}";
+                    font-size: 12px;
+                    color: white;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+        }
+        
+        // Skin info
+        VerticalLayout {
+            spacing: 2px;
+            
+            Text {
+                text: skin-info.name;
+                font-size: 13px;
+                font-weight: 500;
+                color: Theme.text-primary;
+                overflow: elide;
+            }
+            
+            Text {
+                text: skin-info.model-type == "slim" ? "Slim" : "Classic";
+                font-size: 11px;
+                color: Theme.text-tertiary;
+            }
+        }
+        
+        Rectangle { vertical-stretch: 1; }
+        
+        // Actions
+        HorizontalLayout {
+            spacing: 4px;
+            
+            Rectangle {
+                horizontal-stretch: 1;
+                height: 28px;
+                border-radius: 6px;
+                background: apply-touch.has-hover ? Theme.primary-hover : Theme.primary;
+                
+                animate background { duration: 150ms; }
+                
+                apply-touch := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { apply-clicked(skin-info.id); }
+                }
+                
+                Text {
+                    text: "Apply";
+                    font-size: 12px;
+                    font-weight: 500;
+                    color: Theme.text-on-primary;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+            
+            Rectangle {
+                width: 28px;
+                height: 28px;
+                border-radius: 6px;
+                background: delete-touch.has-hover ? Theme.error.with-alpha(0.1) : transparent;
+                
+                delete-touch := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { delete-clicked(skin-info.id); }
+                }
+                
+                Text {
+                    text: "\u{f1f8}";
+                    font-size: 12px;
+                    color: Theme.error;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+}

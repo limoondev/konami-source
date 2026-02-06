@@ -1,0 +1,133 @@
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║                   KONAMI CLIENT - PARTICLES                      ║
+// ║  Floating particles, confetti, ambient effects                  ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+import { Theme } from "../themes/base.slint";
+
+// ═══════════════════════════════════════════════════════════════════
+// FLOATING PARTICLE 
+// ═══════════════════════════════════════════════════════════════════
+component FloatingParticle inherits Rectangle {
+    in property <length> particle-size: 4px;
+    in property <color> particle-color: Theme.primary.with-alpha(0.15);
+    in property <duration> float-duration: 8000ms;
+    in property <length> start-x: 50px;
+    in property <length> start-y: 200px;
+    in property <length> drift-x: 20px;
+    
+    x: start-x;
+    y: start-y;
+    width: particle-size;
+    height: particle-size;
+    border-radius: particle-size / 2;
+    background: particle-color;
+    
+    animate y {
+        duration: float-duration;
+        iteration-count: -1;
+        easing: ease-in-out;
+    }
+    
+    animate x {
+        duration: float-duration * 1.3;
+        iteration-count: -1;
+        easing: ease-in-out;
+    }
+    
+    animate opacity {
+        duration: float-duration;
+        iteration-count: -1;
+        easing: ease-in-out;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PARTICLE FIELD - Background ambient particles
+// ═══════════════════════════════════════════════════════════════════
+export component ParticleField inherits Rectangle {
+    in property <int> particle-count: 12;
+    in property <float> intensity: 0.15;
+    in property <bool> enabled: true;
+    
+    clip: true;
+    
+    if enabled: FloatingParticle {
+        particle-size: 3px;
+        particle-color: Theme.primary.with-alpha(intensity);
+        start-x: parent.width * 0.1;
+        start-y: parent.height * 0.8;
+        float-duration: 7000ms;
+    }
+    
+    if enabled: FloatingParticle {
+        particle-size: 5px;
+        particle-color: Theme.colors.accent.with-alpha(intensity * 0.8);
+        start-x: parent.width * 0.3;
+        start-y: parent.height * 0.6;
+        float-duration: 9000ms;
+    }
+    
+    if enabled: FloatingParticle {
+        particle-size: 2px;
+        particle-color: Theme.primary.with-alpha(intensity * 0.6);
+        start-x: parent.width * 0.5;
+        start-y: parent.height * 0.9;
+        float-duration: 6000ms;
+    }
+    
+    if enabled: FloatingParticle {
+        particle-size: 4px;
+        particle-color: Theme.colors.gradient-end.with-alpha(intensity * 0.7);
+        start-x: parent.width * 0.7;
+        start-y: parent.height * 0.7;
+        float-duration: 10000ms;
+    }
+    
+    if enabled: FloatingParticle {
+        particle-size: 3px;
+        particle-color: Theme.colors.accent.with-alpha(intensity * 0.5);
+        start-x: parent.width * 0.85;
+        start-y: parent.height * 0.85;
+        float-duration: 8500ms;
+    }
+    
+    if enabled: FloatingParticle {
+        particle-size: 6px;
+        particle-color: Theme.primary.with-alpha(intensity * 0.4);
+        start-x: parent.width * 0.15;
+        start-y: parent.height * 0.3;
+        float-duration: 11000ms;
+    }
+    
+    @children
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CONFETTI BURST
+// ═══════════════════════════════════════════════════════════════════
+export component ConfettiBurst inherits Rectangle {
+    in property <bool> active: false;
+    
+    clip: true;
+    
+    for i in 8: Rectangle {
+        property <color> colors: 
+            mod(i, 4) == 0 ? Theme.primary :
+            mod(i, 4) == 1 ? Theme.success :
+            mod(i, 4) == 2 ? Theme.warning :
+            Theme.colors.accent;
+        
+        width: 6px + mod(i, 3) * 2px;
+        height: 6px + mod(i, 4) * 2px;
+        border-radius: mod(i, 2) == 0 ? self.width / 2 : 2px;
+        background: colors;
+        x: parent.width / 2 - self.width / 2;
+        y: active ? parent.height + 20px : parent.height / 2;
+        opacity: active ? 0 : 1;
+        
+        animate y { duration: 800ms + i * 100ms; easing: ease-out; }
+        animate x { duration: 800ms + i * 100ms; easing: ease-out; }
+        animate opacity { duration: 600ms; delay: 400ms; easing: ease-in; }
+    }
+}

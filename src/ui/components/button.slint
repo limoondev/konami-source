@@ -1,0 +1,810 @@
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║                     KONAMI CLIENT - BUTTON COMPONENT LIBRARY                 ║
+// ║                                                                               ║
+// ║  Premium button components with micro-interactions, glow effects,            ║
+// ║  and fluid animations. Inspired by modern design systems.                    ║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
+
+import { ThemeManager } from "../theme/theme.slint";
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BUTTON VARIANTS & SIZES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export enum ButtonVariant {
+    primary,      // Main CTA - vibrant primary color
+    secondary,    // Secondary action - muted color
+    accent,       // Accent color for special actions
+    ghost,        // Transparent with hover effect
+    outline,      // Border only, transparent fill
+    link,         // Text-only button with underline
+    danger,       // Destructive actions
+    success,      // Positive actions
+    glass,        // Glassmorphism style
+}
+
+export enum ButtonSize {
+    xs,    // 24px - Compact UI elements
+    sm,    // 32px - Secondary actions  
+    md,    // 40px - Default
+    lg,    // 48px - Important actions
+    xl,    // 56px - Hero buttons
+    icon,  // Square icon-only
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// KONAMI BUTTON - Premium Button Component
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export component KonamiButton inherits Rectangle {
+    // ─────────────────────────────────────────────────────────────────────────
+    // Public Properties
+    // ─────────────────────────────────────────────────────────────────────────
+    in property <string> text: "Button";
+    in property <string> icon: "";
+    in property <string> icon-right: "";
+    in property <ButtonVariant> variant: ButtonVariant.primary;
+    in property <ButtonSize> size: ButtonSize.md;
+    in property <bool> disabled: false;
+    in property <bool> loading: false;
+    in property <bool> full-width: false;
+    in property <bool> enable-glow: true;
+    in property <bool> enable-ripple: true;
+    
+    callback clicked();
+    callback pressed();
+    callback released();
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // Size Calculations
+    // ─────────────────────────────────────────────────────────────────────────
+    property <length> btn-height: 
+        size == ButtonSize.xs ? 24px :
+        size == ButtonSize.sm ? 32px :
+        size == ButtonSize.md ? 40px :
+        size == ButtonSize.lg ? 48px :
+        size == ButtonSize.xl ? 56px :
+        size == ButtonSize.icon ? 40px : 40px;
+    
+    property <length> btn-padding: 
+        size == ButtonSize.xs ? 8px :
+        size == ButtonSize.sm ? 12px :
+        size == ButtonSize.md ? 16px :
+        size == ButtonSize.lg ? 20px :
+        size == ButtonSize.xl ? 24px :
+        size == ButtonSize.icon ? 0px : 16px;
+    
+    property <length> font-sz:
+        size == ButtonSize.xs ? 11px :
+        size == ButtonSize.sm ? 12px :
+        size == ButtonSize.md ? 14px :
+        size == ButtonSize.lg ? 16px :
+        size == ButtonSize.xl ? 18px : 14px;
+    
+    property <length> icon-sz:
+        size == ButtonSize.xs ? 12px :
+        size == ButtonSize.sm ? 14px :
+        size == ButtonSize.md ? 18px :
+        size == ButtonSize.lg ? 20px :
+        size == ButtonSize.xl ? 24px :
+        size == ButtonSize.icon ? 20px : 18px;
+    
+    property <length> border-rad:
+        size == ButtonSize.xs ? 4px :
+        size == ButtonSize.sm ? 6px :
+        size == ButtonSize.md ? 8px :
+        size == ButtonSize.lg ? 10px :
+        size == ButtonSize.xl ? 12px :
+        size == ButtonSize.icon ? 10px : 8px;
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // Color Configuration
+    // ─────────────────────────────────────────────────────────────────────────
+    property <color> bg-normal:
+        disabled ? ThemeManager.colors.surface :
+        variant == ButtonVariant.primary ? ThemeManager.colors.primary :
+        variant == ButtonVariant.secondary ? ThemeManager.colors.secondary :
+        variant == ButtonVariant.accent ? ThemeManager.colors.accent :
+        variant == ButtonVariant.ghost ? transparent :
+        variant == ButtonVariant.outline ? transparent :
+        variant == ButtonVariant.link ? transparent :
+        variant == ButtonVariant.danger ? ThemeManager.colors.error :
+        variant == ButtonVariant.success ? ThemeManager.colors.success :
+        variant == ButtonVariant.glass ? ThemeManager.colors.surface.with-alpha(0.6) :
+        ThemeManager.colors.primary;
+    
+    property <color> bg-hover:
+        disabled ? ThemeManager.colors.surface :
+        variant == ButtonVariant.primary ? ThemeManager.colors.primary-hover :
+        variant == ButtonVariant.secondary ? ThemeManager.colors.secondary-hover :
+        variant == ButtonVariant.accent ? ThemeManager.colors.accent-hover :
+        variant == ButtonVariant.ghost ? ThemeManager.colors.surface-hover :
+        variant == ButtonVariant.outline ? ThemeManager.colors.primary.with-alpha(0.1) :
+        variant == ButtonVariant.link ? transparent :
+        variant == ButtonVariant.danger ? #ff4466 :
+        variant == ButtonVariant.success ? #33ff99 :
+        variant == ButtonVariant.glass ? ThemeManager.colors.surface.with-alpha(0.8) :
+        ThemeManager.colors.primary-hover;
+    
+    property <color> bg-active:
+        disabled ? ThemeManager.colors.surface :
+        variant == ButtonVariant.primary ? ThemeManager.colors.primary.with-alpha(0.8) :
+        variant == ButtonVariant.secondary ? ThemeManager.colors.secondary.with-alpha(0.8) :
+        variant == ButtonVariant.accent ? ThemeManager.colors.accent.with-alpha(0.8) :
+        variant == ButtonVariant.ghost ? ThemeManager.colors.surface-active :
+        variant == ButtonVariant.outline ? ThemeManager.colors.primary.with-alpha(0.2) :
+        variant == ButtonVariant.danger ? #cc0033 :
+        variant == ButtonVariant.success ? #00cc66 :
+        variant == ButtonVariant.glass ? ThemeManager.colors.surface.with-alpha(0.9) :
+        ThemeManager.colors.primary.with-alpha(0.8);
+    
+    property <color> txt-color:
+        disabled ? ThemeManager.colors.foreground-muted :
+        variant == ButtonVariant.primary ? ThemeManager.colors.primary-foreground :
+        variant == ButtonVariant.secondary ? ThemeManager.colors.secondary-foreground :
+        variant == ButtonVariant.accent ? ThemeManager.colors.accent-foreground :
+        variant == ButtonVariant.ghost ? ThemeManager.colors.foreground :
+        variant == ButtonVariant.outline ? ThemeManager.colors.primary :
+        variant == ButtonVariant.link ? ThemeManager.colors.primary :
+        variant == ButtonVariant.danger ? ThemeManager.colors.error-foreground :
+        variant == ButtonVariant.success ? ThemeManager.colors.success-foreground :
+        variant == ButtonVariant.glass ? ThemeManager.colors.foreground :
+        ThemeManager.colors.primary-foreground;
+    
+    property <color> border-col:
+        variant == ButtonVariant.outline ? ThemeManager.colors.border :
+        variant == ButtonVariant.glass ? ThemeManager.colors.border.with-alpha(0.3) :
+        transparent;
+    
+    property <color> border-hover-col:
+        variant == ButtonVariant.outline ? ThemeManager.colors.primary :
+        variant == ButtonVariant.glass ? ThemeManager.colors.primary.with-alpha(0.5) :
+        transparent;
+    
+    property <color> glow-col:
+        !enable-glow ? transparent :
+        variant == ButtonVariant.primary ? ThemeManager.colors.glow :
+        variant == ButtonVariant.accent ? ThemeManager.colors.accent.with-alpha(0.4) :
+        variant == ButtonVariant.danger ? ThemeManager.colors.error.with-alpha(0.4) :
+        variant == ButtonVariant.success ? ThemeManager.colors.success.with-alpha(0.4) :
+        transparent;
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // State Management
+    // ─────────────────────────────────────────────────────────────────────────
+    property <bool> is-hovered: touch.has-hover && !disabled && !loading;
+    property <bool> is-pressed: touch.pressed && !disabled && !loading;
+    property <bool> is-focused: touch.has-focus && !disabled;
+    
+    property <color> current-bg: 
+        is-pressed ? bg-active : 
+        is-hovered ? bg-hover : 
+        bg-normal;
+    
+    property <color> current-border:
+        is-hovered || is-focused ? border-hover-col : border-col;
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // Layout
+    // ─────────────────────────────────────────────────────────────────────────
+    min-width: size == ButtonSize.icon ? btn-height : 64px;
+    height: btn-height;
+    width: full-width ? 100% : self.preferred-width;
+    horizontal-stretch: full-width ? 1 : 0;
+    
+    border-radius: border-rad;
+    background: current-bg;
+    border-width: variant == ButtonVariant.outline || variant == ButtonVariant.glass ? 1.5px : 0px;
+    border-color: current-border;
+    clip: true;
+    
+    // Glass blur effect (simulated with semi-transparent bg)
+    
+    // Drop shadow / glow
+    drop-shadow-blur: is-hovered && enable-glow ? 16px : is-pressed ? 4px : 8px;
+    drop-shadow-color: is-hovered ? glow-col : ThemeManager.colors.shadow.with-alpha(0.15);
+    drop-shadow-offset-y: is-pressed ? 1px : is-hovered ? 4px : 2px;
+    
+    // Animations
+    animate background { duration: 150ms; easing: ease-out; }
+    animate border-color { duration: 150ms; easing: ease-out; }
+    animate drop-shadow-blur { duration: 200ms; easing: ease-out; }
+    animate drop-shadow-color { duration: 200ms; }
+    animate drop-shadow-offset-y { duration: 100ms; }
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // Content
+    // ─────────────────────────────────────────────────────────────────────────
+    HorizontalLayout {
+        padding-left: btn-padding;
+        padding-right: btn-padding;
+        spacing: 8px;
+        alignment: center;
+        
+        // Loading spinner
+        if loading: Rectangle {
+            width: icon-sz;
+            height: icon-sz;
+            
+            spinner := Rectangle {
+                width: 100%;
+                height: 100%;
+                border-radius: icon-sz / 2;
+                border-width: 2px;
+                border-color: txt-color.with-alpha(0.3);
+                background: transparent;
+            }
+            
+            // Spinner indicator
+            Rectangle {
+                x: (parent.width - 4px) / 2;
+                y: 0;
+                width: 4px;
+                height: 4px;
+                border-radius: 2px;
+                background: txt-color;
+            }
+        }
+        
+        // Left icon
+        if !loading && icon != "": Text {
+            text: icon;
+            font-size: icon-sz;
+            color: txt-color;
+            vertical-alignment: center;
+            
+            animate color { duration: 150ms; }
+        }
+        
+        // Button text
+        if !loading && text != "" && size != ButtonSize.icon: Text {
+            text: root.text;
+            font-size: font-sz;
+            font-weight: 600;
+            color: txt-color;
+            vertical-alignment: center;
+            letter-spacing: 0.3px;
+            
+            animate color { duration: 150ms; }
+        }
+        
+        // Right icon
+        if !loading && icon-right != "": Text {
+            text: icon-right;
+            font-size: icon-sz;
+            color: txt-color;
+            vertical-alignment: center;
+            
+            animate color { duration: 150ms; }
+        }
+    }
+    
+    // Ripple / press overlay
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        background: is-pressed && enable-ripple ? white.with-alpha(0.15) : transparent;
+        
+        animate background { duration: 80ms; }
+    }
+    
+    // Shine effect for primary buttons
+    if variant == ButtonVariant.primary || variant == ButtonVariant.accent: Rectangle {
+        width: 100%;
+        height: 100%;
+        background: @linear-gradient(180deg,
+            white.with-alpha(is-hovered ? 0.12 : 0.08) 0%,
+            transparent 50%
+        );
+    }
+    
+    // Focus ring
+    if is-focused: Rectangle {
+        x: -3px;
+        y: -3px;
+        width: parent.width + 6px;
+        height: parent.height + 6px;
+        border-radius: border-rad + 3px;
+        border-width: 2px;
+        border-color: ThemeManager.colors.primary.with-alpha(0.5);
+        background: transparent;
+    }
+    
+    // Touch area
+    touch := TouchArea {
+        enabled: !disabled && !loading;
+        mouse-cursor: disabled || loading ? default : pointer;
+        
+        clicked => {
+            root.clicked();
+        }
+        
+        pointer-event(event) => {
+            if event.kind == PointerEventKind.down && event.button == PointerEventButton.left {
+                root.pressed();
+            }
+            if event.kind == PointerEventKind.up {
+                root.released();
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ICON BUTTON - Circular/Square Icon-Only Button
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export component IconButton inherits Rectangle {
+    in property <string> icon: "\u{f015}";
+    in property <ButtonVariant> variant: ButtonVariant.ghost;
+    in property <ButtonSize> size: ButtonSize.md;
+    in property <bool> disabled: false;
+    in property <bool> circular: false;
+    in property <string> tooltip: "";
+    in property <bool> active: false;
+    in property <bool> badge: false;
+    in property <string> badge-text: "";
+    
+    callback clicked();
+    
+    property <length> btn-sz:
+        size == ButtonSize.xs ? 24px :
+        size == ButtonSize.sm ? 32px :
+        size == ButtonSize.md ? 40px :
+        size == ButtonSize.lg ? 48px :
+        size == ButtonSize.xl ? 56px : 40px;
+    
+    property <length> icon-sz:
+        size == ButtonSize.xs ? 12px :
+        size == ButtonSize.sm ? 16px :
+        size == ButtonSize.md ? 20px :
+        size == ButtonSize.lg ? 24px :
+        size == ButtonSize.xl ? 28px : 20px;
+    
+    property <length> rad:
+        circular ? btn-sz / 2 :
+        size == ButtonSize.xs ? 4px :
+        size == ButtonSize.sm ? 6px :
+        size == ButtonSize.md ? 8px :
+        size == ButtonSize.lg ? 10px : 8px;
+    
+    property <bool> is-hovered: touch.has-hover && !disabled;
+    property <bool> is-pressed: touch.pressed && !disabled;
+    
+    property <color> bg-col:
+        disabled ? transparent :
+        active ? ThemeManager.colors.primary.with-alpha(0.15) :
+        is-pressed ? ThemeManager.colors.surface-active :
+        is-hovered ? ThemeManager.colors.surface-hover :
+        variant == ButtonVariant.ghost ? transparent :
+        ThemeManager.colors.surface;
+    
+    property <color> icon-col:
+        disabled ? ThemeManager.colors.foreground-subtle :
+        active ? ThemeManager.colors.primary :
+        is-hovered ? ThemeManager.colors.foreground :
+        ThemeManager.colors.foreground-muted;
+    
+    width: btn-sz;
+    height: btn-sz;
+    border-radius: rad;
+    background: bg-col;
+    
+    animate background { duration: 150ms; easing: ease-out; }
+    
+    Text {
+        text: icon;
+        font-size: icon-sz;
+        color: icon-col;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        
+        animate color { duration: 150ms; }
+    }
+    
+    // Active indicator bar
+    if active: Rectangle {
+        x: 0;
+        y: parent.height - 3px;
+        width: parent.width;
+        height: 3px;
+        border-radius: 1.5px;
+        background: ThemeManager.colors.primary;
+    }
+    
+    // Badge
+    if badge: Rectangle {
+        x: parent.width - 12px;
+        y: 2px;
+        min-width: 18px;
+        height: 18px;
+        border-radius: 9px;
+        background: ThemeManager.colors.error;
+        padding-left: 4px;
+        padding-right: 4px;
+        
+        Text {
+            text: badge-text != "" ? badge-text : "";
+            font-size: 10px;
+            font-weight: 700;
+            color: white;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+    
+    touch := TouchArea {
+        enabled: !disabled;
+        mouse-cursor: disabled ? default : pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PLAY BUTTON - Premium Gaming-Style Launch Button
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export component PlayButton inherits Rectangle {
+    in property <string> text: "PLAY";
+    in property <string> subtitle: "";
+    in property <bool> disabled: false;
+    in property <bool> loading: false;
+    in property <float> progress: 0.0;
+    
+    callback clicked();
+    
+    property <bool> is-hovered: touch.has-hover && !disabled && !loading;
+    property <bool> is-pressed: touch.pressed && !disabled && !loading;
+    
+    // Pulse animation phase
+    property <float> pulse: 0.0;
+    
+    width: 220px;
+    height: 64px;
+    border-radius: 16px;
+    
+    // Animated gradient background
+    background: @linear-gradient(135deg, 
+        ThemeManager.colors.primary 0%, 
+        ThemeManager.colors.accent 100%
+    );
+    
+    opacity: disabled ? 0.5 : 1.0;
+    
+    // Intense glow on hover
+    drop-shadow-blur: is-hovered ? 32px : is-pressed ? 12px : 20px;
+    drop-shadow-color: ThemeManager.colors.glow.with-alpha(is-hovered ? 0.8 : 0.5);
+    drop-shadow-offset-y: is-pressed ? 2px : is-hovered ? 8px : 4px;
+    
+    animate drop-shadow-blur { duration: 250ms; easing: ease-out; }
+    animate drop-shadow-offset-y { duration: 150ms; }
+    
+    // Pulse animation timer
+    Timer {
+        interval: 50ms;
+        running: !disabled && !loading;
+        triggered => {
+            pulse = mod(pulse + 0.05, 6.28318); // 2*PI
+        }
+    }
+    
+    // Outer glow ring (animated)
+    Rectangle {
+        x: -4px;
+        y: -4px;
+        width: parent.width + 8px;
+        height: parent.height + 8px;
+        border-radius: 20px;
+        border-width: 2px;
+        border-color: is-hovered ? 
+            ThemeManager.colors.primary.with-alpha(0.5 + sin(pulse * 1rad) * 0.2) : 
+            transparent;
+        background: transparent;
+        
+        animate border-color { duration: 200ms; }
+    }
+    
+    // Progress bar overlay (for loading)
+    if loading && progress > 0: Rectangle {
+        x: 0;
+        y: 0;
+        width: parent.width * progress;
+        height: parent.height;
+        border-radius: progress >= 1.0 ? 16px : 16px 0 0 16px;
+        background: white.with-alpha(0.2);
+        clip: true;
+        
+        animate width { duration: 200ms; easing: ease-out; }
+    }
+    
+    // Content
+    VerticalLayout {
+        alignment: center;
+        spacing: 2px;
+        
+        HorizontalLayout {
+            alignment: center;
+            spacing: 12px;
+            
+            // Play icon or loading spinner
+            if loading: Rectangle {
+                width: 24px;
+                height: 24px;
+                border-radius: 12px;
+                border-width: 3px;
+                border-color: ThemeManager.colors.primary-foreground.with-alpha(0.3);
+                
+                Rectangle {
+                    x: 9px;
+                    y: 0;
+                    width: 6px;
+                    height: 6px;
+                    border-radius: 3px;
+                    background: ThemeManager.colors.primary-foreground;
+                }
+            }
+            
+            if !loading: Text {
+                text: "\u{25B6}";  // Play triangle
+                font-size: 22px;
+                color: ThemeManager.colors.primary-foreground;
+                vertical-alignment: center;
+            }
+            
+            Text {
+                text: loading ? "LAUNCHING..." : root.text;
+                font-size: 20px;
+                font-weight: 800;
+                color: ThemeManager.colors.primary-foreground;
+                letter-spacing: 3px;
+                vertical-alignment: center;
+            }
+        }
+        
+        if subtitle != "" && !loading: Text {
+            text: subtitle;
+            font-size: 11px;
+            font-weight: 500;
+            color: ThemeManager.colors.primary-foreground.with-alpha(0.75);
+            horizontal-alignment: center;
+            letter-spacing: 0.5px;
+        }
+    }
+    
+    // Top shine
+    Rectangle {
+        width: 100%;
+        height: 50%;
+        border-radius: 16px 16px 0 0;
+        background: @linear-gradient(180deg,
+            white.with-alpha(is-hovered ? 0.18 : 0.12) 0%,
+            transparent 100%
+        );
+    }
+    
+    // Press darkening
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        border-radius: 16px;
+        background: is-pressed ? black.with-alpha(0.15) : transparent;
+        
+        animate background { duration: 100ms; }
+    }
+    
+    touch := TouchArea {
+        enabled: !disabled && !loading;
+        mouse-cursor: disabled || loading ? default : pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BUTTON GROUP - Segmented Control
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export component ButtonGroup inherits Rectangle {
+    in property <[string]> items: [];
+    in property <int> selected-index: 0;
+    in property <ButtonSize> size: ButtonSize.md;
+    in property <bool> disabled: false;
+    
+    callback selection-changed(int);
+    
+    property <length> item-height:
+        size == ButtonSize.sm ? 32px :
+        size == ButtonSize.md ? 40px :
+        size == ButtonSize.lg ? 48px : 40px;
+    
+    property <length> font-sz:
+        size == ButtonSize.sm ? 12px :
+        size == ButtonSize.md ? 14px :
+        size == ButtonSize.lg ? 16px : 14px;
+    
+    height: item-height;
+    border-radius: 8px;
+    background: ThemeManager.colors.surface;
+    border-width: 1px;
+    border-color: ThemeManager.colors.border;
+    clip: true;
+    
+    HorizontalLayout {
+        for item[idx] in items: Rectangle {
+            property <bool> is-selected: idx == selected-index;
+            property <bool> is-hovered: item-touch.has-hover && !disabled;
+            
+            horizontal-stretch: 1;
+            background: is-selected ? ThemeManager.colors.primary : 
+                        is-hovered ? ThemeManager.colors.surface-hover : 
+                        transparent;
+            
+            animate background { duration: 150ms; easing: ease-out; }
+            
+            Text {
+                text: item;
+                font-size: font-sz;
+                font-weight: is-selected ? 600 : 400;
+                color: is-selected ? ThemeManager.colors.primary-foreground : 
+                       ThemeManager.colors.foreground-muted;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                
+                animate color { duration: 150ms; }
+                animate font-weight { duration: 150ms; }
+            }
+            
+            item-touch := TouchArea {
+                enabled: !disabled;
+                mouse-cursor: pointer;
+                clicked => { 
+                    root.selection-changed(idx); 
+                }
+            }
+            
+            // Divider
+            if idx < items.length - 1 && !is-selected && idx + 1 != selected-index: Rectangle {
+                x: parent.width - 1px;
+                y: 8px;
+                width: 1px;
+                height: parent.height - 16px;
+                background: ThemeManager.colors.border;
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FLOATING ACTION BUTTON (FAB)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export component FloatingActionButton inherits Rectangle {
+    in property <string> icon: "\u{f067}";
+    in property <string> label: "";
+    in property <bool> extended: false;
+    in property <bool> disabled: false;
+    in property <ButtonVariant> variant: ButtonVariant.primary;
+    
+    callback clicked();
+    
+    property <bool> is-hovered: touch.has-hover && !disabled;
+    property <bool> is-pressed: touch.pressed && !disabled;
+    property <bool> show-label: extended && label != "";
+    
+    property <color> bg-col:
+        variant == ButtonVariant.primary ? ThemeManager.colors.primary :
+        variant == ButtonVariant.secondary ? ThemeManager.colors.secondary :
+        variant == ButtonVariant.accent ? ThemeManager.colors.accent :
+        ThemeManager.colors.primary;
+    
+    property <color> bg-hover:
+        variant == ButtonVariant.primary ? ThemeManager.colors.primary-hover :
+        variant == ButtonVariant.secondary ? ThemeManager.colors.secondary-hover :
+        variant == ButtonVariant.accent ? ThemeManager.colors.accent-hover :
+        ThemeManager.colors.primary-hover;
+    
+    property <color> fg-col:
+        variant == ButtonVariant.primary ? ThemeManager.colors.primary-foreground :
+        variant == ButtonVariant.secondary ? ThemeManager.colors.secondary-foreground :
+        variant == ButtonVariant.accent ? ThemeManager.colors.accent-foreground :
+        ThemeManager.colors.primary-foreground;
+    
+    width: show-label ? 140px : 56px;
+    height: 56px;
+    border-radius: 28px;
+    background: is-pressed ? bg-col.with-alpha(0.9) : is-hovered ? bg-hover : bg-col;
+    opacity: disabled ? 0.5 : 1.0;
+    
+    drop-shadow-blur: is-hovered ? 24px : 16px;
+    drop-shadow-color: ThemeManager.colors.glow.with-alpha(is-hovered ? 0.6 : 0.4);
+    drop-shadow-offset-y: is-pressed ? 2px : is-hovered ? 8px : 4px;
+    
+    animate width { duration: 200ms; easing: cubic-bezier(0.4, 0, 0.2, 1); }
+    animate background { duration: 150ms; }
+    animate drop-shadow-blur { duration: 200ms; }
+    
+    HorizontalLayout {
+        alignment: center;
+        spacing: show-label ? 10px : 0px;
+        padding-left: show-label ? 20px : 0px;
+        padding-right: show-label ? 20px : 0px;
+        
+        Text {
+            text: icon;
+            font-size: 24px;
+            color: fg-col;
+            vertical-alignment: center;
+        }
+        
+        if show-label: Text {
+            text: label;
+            font-size: 14px;
+            font-weight: 600;
+            color: fg-col;
+            vertical-alignment: center;
+        }
+    }
+    
+    touch := TouchArea {
+        enabled: !disabled;
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// LINK BUTTON - Text-only clickable link
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export component LinkButton inherits Rectangle {
+    in property <string> text: "Link";
+    in property <string> icon: "";
+    in property <bool> disabled: false;
+    in property <bool> underline: true;
+    
+    callback clicked();
+    
+    property <bool> is-hovered: touch.has-hover && !disabled;
+    
+    height: 24px;
+    background: transparent;
+    
+    HorizontalLayout {
+        spacing: 6px;
+        alignment: center;
+        
+        if icon != "": Text {
+            text: icon;
+            font-size: 14px;
+            color: is-hovered ? ThemeManager.colors.primary-hover : ThemeManager.colors.primary;
+            vertical-alignment: center;
+            
+            animate color { duration: 150ms; }
+        }
+        
+        Text {
+            text: root.text;
+            font-size: 14px;
+            font-weight: 500;
+            color: is-hovered ? ThemeManager.colors.primary-hover : ThemeManager.colors.primary;
+            vertical-alignment: center;
+            
+            animate color { duration: 150ms; }
+        }
+    }
+    
+    // Underline
+    if underline: Rectangle {
+        y: parent.height - 2px;
+        width: is-hovered ? 100% : 0%;
+        height: 1px;
+        background: ThemeManager.colors.primary;
+        
+        animate width { duration: 200ms; easing: ease-out; }
+    }
+    
+    touch := TouchArea {
+        enabled: !disabled;
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}

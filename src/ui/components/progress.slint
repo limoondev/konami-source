@@ -1,0 +1,375 @@
+// Konami Client - Progress Components
+import { ThemeManager } from "../theme/theme.slint";
+
+// Linear Progress Bar
+export component ProgressBar inherits Rectangle {
+    in property <float> value: 0;           // 0.0 to 1.0
+    in property <float> secondary-value: 0; // Buffer value
+    in property <bool> indeterminate: false;
+    in property <bool> show-percentage: false;
+    in property <string> label: "";
+    
+    property <length> bar-height: 8px;
+    
+    height: label != "" || show-percentage ? 32px : bar-height;
+    
+    VerticalLayout {
+        spacing: 6px;
+        
+        if label != "" || show-percentage: HorizontalLayout {
+            if label != "": Text {
+                text: label;
+                color: ThemeManager.colors.foreground-muted;
+                font-size: 12px;
+                horizontal-stretch: 1;
+            }
+            
+            if show-percentage: Text {
+                text: round(value * 100) + "%";
+                color: ThemeManager.colors.foreground;
+                font-size: 12px;
+                font-weight: 500;
+            }
+        }
+        
+        track := Rectangle {
+            height: bar-height;
+            border-radius: bar-height / 2;
+            background: ThemeManager.colors.surface;
+            clip: true;
+            
+            // Secondary/buffer value
+            if secondary-value > 0: Rectangle {
+                width: secondary-value * parent.width;
+                height: 100%;
+                border-radius: bar-height / 2;
+                background: ThemeManager.colors.primary.with-alpha(0.3);
+            }
+            
+            // Primary value
+            if !indeterminate: Rectangle {
+                width: value * parent.width;
+                height: 100%;
+                border-radius: bar-height / 2;
+                background: ThemeManager.colors.primary;
+                
+                animate width { duration: ThemeManager.animation.duration-normal; }
+            }
+            
+            // Indeterminate animation
+            if indeterminate: Rectangle {
+                property <float> anim-pos: 0;
+                
+                x: (anim-pos - 0.3) * parent.width;
+                width: parent.width * 0.3;
+                height: 100%;
+                border-radius: bar-height / 2;
+                background: ThemeManager.colors.primary;
+                
+                animate anim-pos {
+                    duration: 1.5s;
+                    iteration-count: -1;
+                    easing: ease-in-out;
+                }
+                
+                init => {
+                    anim-pos = 1.3;
+                }
+            }
+        }
+    }
+}
+
+// Circular Progress / Spinner
+export component CircularProgress inherits Rectangle {
+    in property <float> value: 0;       // 0.0 to 1.0, ignored if indeterminate
+    in property <bool> indeterminate: true;
+    in property <length> size: 48px;
+    in property <length> stroke-width: 4px;
+    in property <bool> show-value: false;
+    
+    width: size;
+    height: size;
+    
+    property <float> rotation-angle: 0;
+    
+    // Background circle
+    Path {
+        width: 100%;
+        height: 100%;
+        stroke: ThemeManager.colors.surface;
+        stroke-width: root.stroke-width;
+        fill: transparent;
+        commands: "M " + (size/2) + " " + (stroke-width/2) + 
+                 " A " + (size/2 - stroke-width/2) + " " + (size/2 - stroke-width/2) + 
+                 " 0 1 1 " + (size/2 - 0.001) + " " + (stroke-width/2);
+    }
+    
+    // Progress arc (for determinate)
+    if !indeterminate: Path {
+        width: 100%;
+        height: 100%;
+        stroke: ThemeManager.colors.primary;
+        stroke-width: root.stroke-width;
+        fill: transparent;
+        stroke-linecap: round;
+        
+        property <float> circumference: 2 * 3.14159 * (size/2 - stroke-width/2);
+        property <string> dash-offset: circumference * (1 - value);
+        
+        commands: "M " + (size/2) + " " + (stroke-width/2) + 
+                 " A " + (size/2 - stroke-width/2) + " " + (size/2 - stroke-width/2) + 
+                 " 0 " + (value > 0.5 ? "1" : "0") + " 1 " + 
+                 (size/2 + (size/2 - stroke-width/2) * sin(value * 2 * 3.14159)) + " " +
+                 (size/2 - (size/2 - stroke-width/2) * cos(value * 2 * 3.14159));
+    }
+    
+    // Spinner (for indeterminate)
+    if indeterminate: spinner := Rectangle {
+        width: 100%;
+        height: 100%;
+        
+        property <angle> spin-angle: 0deg;
+        
+        animate spin-angle {
+            duration: 1s;
+            iteration-count: -1;
+            easing: linear;
+        }
+        
+        init => {
+            spin-angle = 360deg;
+        }
+        
+        Path {
+            width: 100%;
+            height: 100%;
+            stroke: ThemeManager.colors.primary;
+            stroke-width: root.stroke-width;
+            fill: transparent;
+            stroke-linecap: round;
+            
+            // Quarter arc that rotates
+            commands: "M " + (size/2) + " " + (stroke-width/2) + 
+                     " A " + (size/2 - stroke-width/2) + " " + (size/2 - stroke-width/2) + 
+                     " 0 0 1 " + (size - stroke-width/2) + " " + (size/2);
+        }
+    }
+    
+    // Center value display
+    if show-value && !indeterminate: Text {
+        text: round(value * 100) + "%";
+        color: ThemeManager.colors.foreground;
+        font-size: size / 4;
+        font-weight: 600;
+    }
+}
+
+// Download Progress Component
+export component DownloadProgress inherits Rectangle {
+    in property <string> filename: "";
+    in property <float> progress: 0;
+    in property <string> downloaded: "0 MB";
+    in property <string> total: "0 MB";
+    in property <string> speed: "0 MB/s";
+    in property <string> eta: "";
+    in property <bool> paused: false;
+    in property <bool> error: false;
+    
+    callback pause-clicked();
+    callback cancel-clicked();
+    callback retry-clicked();
+    
+    height: 80px;
+    border-radius: ThemeManager.radius.md;
+    background: ThemeManager.colors.surface;
+    border-width: 1px;
+    border-color: error ? ThemeManager.colors.error : ThemeManager.colors.border;
+    
+    VerticalLayout {
+        padding: ThemeManager.spacing.md;
+        spacing: 8px;
+        
+        // Header
+        HorizontalLayout {
+            spacing: 12px;
+            
+            // File icon
+            Rectangle {
+                width: 32px;
+                height: 32px;
+                border-radius: ThemeManager.radius.sm;
+                background: ThemeManager.colors.background-secondary;
+                
+                Text {
+                    text: error ? "⚠" : "📄";
+                    font-size: 16px;
+                }
+            }
+            
+            VerticalLayout {
+                spacing: 2px;
+                horizontal-stretch: 1;
+                
+                Text {
+                    text: filename;
+                    color: ThemeManager.colors.foreground;
+                    font-size: 13px;
+                    font-weight: 500;
+                    overflow: elide;
+                }
+                
+                HorizontalLayout {
+                    spacing: 8px;
+                    
+                    Text {
+                        text: downloaded + " / " + total;
+                        color: ThemeManager.colors.foreground-muted;
+                        font-size: 11px;
+                    }
+                    
+                    if !error && !paused: Text {
+                        text: "• " + speed;
+                        color: ThemeManager.colors.foreground-subtle;
+                        font-size: 11px;
+                    }
+                    
+                    if eta != "" && !error && !paused: Text {
+                        text: "• " + eta + " remaining";
+                        color: ThemeManager.colors.foreground-subtle;
+                        font-size: 11px;
+                    }
+                    
+                    if paused: Text {
+                        text: "• Paused";
+                        color: ThemeManager.colors.warning;
+                        font-size: 11px;
+                    }
+                    
+                    if error: Text {
+                        text: "• Error";
+                        color: ThemeManager.colors.error;
+                        font-size: 11px;
+                    }
+                }
+            }
+            
+            // Controls
+            HorizontalLayout {
+                spacing: 4px;
+                alignment: center;
+                
+                if !error: Rectangle {
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 14px;
+                    background: pause-touch.has-hover ? ThemeManager.colors.surface-hover : transparent;
+                    
+                    pause-touch := TouchArea {
+                        clicked => { root.pause-clicked(); }
+                    }
+                    
+                    Text {
+                        text: paused ? "▶" : "⏸";
+                        color: ThemeManager.colors.foreground-muted;
+                        font-size: 12px;
+                    }
+                }
+                
+                if error: Rectangle {
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 14px;
+                    background: retry-touch.has-hover ? ThemeManager.colors.surface-hover : transparent;
+                    
+                    retry-touch := TouchArea {
+                        clicked => { root.retry-clicked(); }
+                    }
+                    
+                    Text {
+                        text: "↻";
+                        color: ThemeManager.colors.foreground-muted;
+                        font-size: 14px;
+                    }
+                }
+                
+                Rectangle {
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 14px;
+                    background: cancel-touch.has-hover ? ThemeManager.colors.error.with-alpha(0.2) : transparent;
+                    
+                    cancel-touch := TouchArea {
+                        clicked => { root.cancel-clicked(); }
+                    }
+                    
+                    Text {
+                        text: "×";
+                        color: cancel-touch.has-hover ? ThemeManager.colors.error : ThemeManager.colors.foreground-muted;
+                        font-size: 16px;
+                    }
+                }
+            }
+        }
+        
+        // Progress bar
+        ProgressBar {
+            value: progress;
+            indeterminate: false;
+        }
+    }
+}
+
+// Launch Progress Component
+export component LaunchProgress inherits Rectangle {
+    in property <string> status: "Preparing...";
+    in property <float> progress: 0;
+    in property <string> stage: "";
+    in property <int> current-file: 0;
+    in property <int> total-files: 0;
+    
+    callback cancel-clicked();
+    
+    height: 120px;
+    border-radius: ThemeManager.radius.lg;
+    background: ThemeManager.colors.surface;
+    
+    VerticalLayout {
+        padding: ThemeManager.spacing.lg;
+        spacing: ThemeManager.spacing.md;
+        alignment: center;
+        
+        // Status text
+        Text {
+            text: status;
+            color: ThemeManager.colors.foreground;
+            font-size: 16px;
+            font-weight: 500;
+            horizontal-alignment: center;
+        }
+        
+        // Progress bar
+        ProgressBar {
+            value: progress;
+            show-percentage: true;
+        }
+        
+        // Stage info
+        HorizontalLayout {
+            alignment: center;
+            spacing: 16px;
+            
+            if stage != "": Text {
+                text: stage;
+                color: ThemeManager.colors.foreground-muted;
+                font-size: 12px;
+            }
+            
+            if total-files > 0: Text {
+                text: current-file + " / " + total-files + " files";
+                color: ThemeManager.colors.foreground-subtle;
+                font-size: 12px;
+            }
+        }
+    }
+}

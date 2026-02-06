@@ -1,0 +1,591 @@
+// ============================================================================
+// KONAMI CLIENT - Premium Sidebar Navigation
+// Revolutionary navigation with fluid animations and glassmorphism
+// ============================================================================
+
+import { Theme, Animation, Spacing, Typography, Effects } from "../themes/base.slint";
+
+// Sidebar navigation item with hover effects and active state
+export component SidebarItem inherits Rectangle {
+    in property <string> icon;
+    in property <string> label;
+    in property <bool> active: false;
+    in property <bool> collapsed: false;
+    in property <bool> has-badge: false;
+    in property <int> badge-count: 0;
+    
+    callback clicked();
+    
+    property <float> hover-progress: 0;
+    property <float> active-progress: active ? 1.0 : 0.0;
+    property <float> press-scale: 1.0;
+    
+    height: collapsed ? 56px : 52px;
+    width: 100%;
+    background: transparent;
+    border-radius: 12px;
+    clip: true;
+    
+    // Animated background on hover/active
+    animate hover-progress { duration: 180ms; easing: ease-out; }
+    animate active-progress { duration: 250ms; easing: cubic-bezier(0.34, 1.56, 0.64, 1); }
+    animate press-scale { duration: 100ms; easing: ease-out; }
+    
+    // Background glow effect
+    Rectangle {
+        x: 0;
+        y: 0;
+        width: parent.width;
+        height: parent.height;
+        border-radius: parent.border-radius;
+        background: Theme.current.primary.with-alpha(
+            active ? 0.15 : hover-progress * 0.08
+        );
+        
+        // Active indicator glow
+        Rectangle {
+            x: 0;
+            y: (parent.height - self.height) / 2;
+            width: 4px;
+            height: active ? 24px : 0px;
+            border-radius: 2px;
+            background: Theme.current.primary;
+            
+            animate height { duration: 200ms; easing: cubic-bezier(0.34, 1.56, 0.64, 1); }
+            
+            // Glow effect
+            drop-shadow-blur: 8px;
+            drop-shadow-color: Theme.current.primary.with-alpha(0.6);
+        }
+    }
+    
+    // Content layout
+    HorizontalLayout {
+        padding-left: collapsed ? 0px : 16px;
+        padding-right: collapsed ? 0px : 12px;
+        spacing: collapsed ? 0px : 14px;
+        alignment: collapsed ? center : start;
+        
+        // Icon container with animation
+        Rectangle {
+            width: 24px;
+            height: 24px;
+            
+            Text {
+                text: icon;
+                font-size: 20px;
+                color: active ? Theme.current.primary : 
+                       Theme.current.text-secondary.mix(Theme.current.text-primary, hover-progress);
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                
+                animate color { duration: 180ms; }
+            }
+        }
+        
+        // Label with fade animation
+        if !collapsed: Text {
+            text: label;
+            font-size: Typography.body.size;
+            font-weight: active ? 600 : 500;
+            color: active ? Theme.current.text-primary : 
+                   Theme.current.text-secondary.mix(Theme.current.text-primary, hover-progress);
+            vertical-alignment: center;
+            horizontal-stretch: 1;
+            overflow: elide;
+            
+            animate color { duration: 180ms; }
+        }
+        
+        // Badge indicator
+        if has-badge && badge-count > 0 && !collapsed: Rectangle {
+            width: badge-count > 99 ? 28px : 22px;
+            height: 22px;
+            border-radius: 11px;
+            background: Theme.current.status.error;
+            
+            Text {
+                text: badge-count > 99 ? "99+" : badge-count;
+                font-size: 11px;
+                font-weight: 700;
+                color: #ffffff;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+    }
+    
+    // Touch/click handler
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        
+        clicked => {
+            root.clicked();
+        }
+        
+        pointer-event(e) => {
+            if e.kind == PointerEventKind.down {
+                press-scale = 0.96;
+            } else if e.kind == PointerEventKind.up {
+                press-scale = 1.0;
+            }
+        }
+    }
+    
+    // Update hover state
+    states [
+        hovered when touch.has-hover && !active: {
+            hover-progress: 1.0;
+        }
+    ]
+}
+
+// Section header for sidebar groups
+export component SidebarSection inherits Rectangle {
+    in property <string> title;
+    in property <bool> collapsed: false;
+    
+    height: collapsed ? 0px : 36px;
+    background: transparent;
+    opacity: collapsed ? 0 : 1;
+    
+    animate height { duration: 200ms; easing: ease-out; }
+    animate opacity { duration: 150ms; }
+    
+    if !collapsed: HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 16px;
+        alignment: start;
+        
+        Text {
+            text: title;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.8px;
+            color: Theme.current.text-tertiary;
+            vertical-alignment: center;
+            text-transform: uppercase;
+        }
+    }
+}
+
+// User profile widget at bottom of sidebar
+export component SidebarUserProfile inherits Rectangle {
+    in property <string> username: "Player";
+    in property <string> avatar-url;
+    in property <bool> online: true;
+    in property <bool> collapsed: false;
+    
+    callback clicked();
+    callback settings-clicked();
+    
+    property <float> hover-progress: 0;
+    
+    height: collapsed ? 64px : 72px;
+    background: Theme.current.surface.mix(Theme.current.surface-elevated, hover-progress * 0.5);
+    border-radius: 16px;
+    border-width: 1px;
+    border-color: Theme.current.border.with-alpha(0.5 + hover-progress * 0.3);
+    
+    animate background { duration: 180ms; }
+    animate border-color { duration: 180ms; }
+    
+    HorizontalLayout {
+        padding: collapsed ? 8px : 12px;
+        spacing: collapsed ? 0px : 12px;
+        alignment: collapsed ? center : start;
+        
+        // Avatar with online indicator
+        Rectangle {
+            width: collapsed ? 40px : 44px;
+            height: self.width;
+            border-radius: self.width / 2;
+            background: Theme.current.primary.with-alpha(0.2);
+            clip: true;
+            
+            // Avatar image or fallback
+            Text {
+                text: username.character-at(0);
+                font-size: collapsed ? 16px : 18px;
+                font-weight: 700;
+                color: Theme.current.primary;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+            
+            // Online status indicator
+            Rectangle {
+                x: parent.width - 14px;
+                y: parent.height - 14px;
+                width: 14px;
+                height: 14px;
+                border-radius: 7px;
+                background: Theme.current.background;
+                border-width: 2px;
+                border-color: Theme.current.background;
+                
+                Rectangle {
+                    x: 2px;
+                    y: 2px;
+                    width: 10px;
+                    height: 10px;
+                    border-radius: 5px;
+                    background: online ? Theme.current.status.success : Theme.current.text-tertiary;
+                    
+                    animate background { duration: 300ms; }
+                }
+            }
+        }
+        
+        // User info (hidden when collapsed)
+        if !collapsed: VerticalLayout {
+            horizontal-stretch: 1;
+            alignment: center;
+            spacing: 2px;
+            
+            Text {
+                text: username;
+                font-size: 14px;
+                font-weight: 600;
+                color: Theme.current.text-primary;
+                overflow: elide;
+            }
+            
+            Text {
+                text: online ? "Online" : "Offline";
+                font-size: 12px;
+                color: online ? Theme.current.status.success : Theme.current.text-tertiary;
+            }
+        }
+        
+        // Settings button (hidden when collapsed)
+        if !collapsed: Rectangle {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: transparent;
+            
+            property <float> btn-hover: 0;
+            animate btn-hover { duration: 150ms; }
+            
+            Rectangle {
+                width: 100%;
+                height: 100%;
+                border-radius: parent.border-radius;
+                background: Theme.current.surface-elevated.with-alpha(parent.btn-hover);
+            }
+            
+            Text {
+                text: "\u{2699}"; // Gear icon
+                font-size: 18px;
+                color: Theme.current.text-secondary;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+            
+            settings-touch := TouchArea {
+                mouse-cursor: pointer;
+                clicked => { settings-clicked(); }
+            }
+            
+            states [
+                hovered when settings-touch.has-hover: {
+                    btn-hover: 1.0;
+                }
+            ]
+        }
+    }
+    
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+    
+    states [
+        hovered when touch.has-hover: {
+            hover-progress: 1.0;
+        }
+    ]
+}
+
+// Main sidebar component with collapse animation
+export component Sidebar inherits Rectangle {
+    in property <int> active-index: 0;
+    in property <bool> collapsed: false;
+    in property <string> username: "Player";
+    in property <bool> user-online: true;
+    
+    callback navigate(int);
+    callback user-profile-clicked();
+    callback settings-clicked();
+    
+    property <float> collapse-progress: collapsed ? 1.0 : 0.0;
+    
+    width: collapsed ? 80px : 280px;
+    background: Theme.current.surface.with-alpha(0.95);
+    border-radius: 0px;
+    
+    animate width { duration: 300ms; easing: cubic-bezier(0.4, 0, 0.2, 1); }
+    animate collapse-progress { duration: 300ms; easing: cubic-bezier(0.4, 0, 0.2, 1); }
+    
+    // Glassmorphism backdrop
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        background: @linear-gradient(180deg, 
+            Theme.current.surface.with-alpha(0.98) 0%,
+            Theme.current.background.with-alpha(0.95) 100%
+        );
+    }
+    
+    // Right border accent
+    Rectangle {
+        x: parent.width - 1px;
+        y: 0;
+        width: 1px;
+        height: 100%;
+        background: Theme.current.border;
+    }
+    
+    VerticalLayout {
+        padding: 16px;
+        spacing: 8px;
+        
+        // Logo/Brand header
+        Rectangle {
+            height: 64px;
+            background: transparent;
+            
+            HorizontalLayout {
+                alignment: collapsed ? center : start;
+                spacing: 12px;
+                padding-left: collapsed ? 0px : 4px;
+                
+                // Animated logo
+                Rectangle {
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 12px;
+                    background: @linear-gradient(135deg, 
+                        Theme.current.primary 0%, 
+                        Theme.current.secondary 100%
+                    );
+                    
+                    drop-shadow-blur: 12px;
+                    drop-shadow-color: Theme.current.primary.with-alpha(0.4);
+                    
+                    Text {
+                        text: "K";
+                        font-size: 24px;
+                        font-weight: 800;
+                        color: #ffffff;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                if !collapsed: VerticalLayout {
+                    alignment: center;
+                    spacing: 2px;
+                    
+                    Text {
+                        text: "KONAMI";
+                        font-size: 18px;
+                        font-weight: 800;
+                        letter-spacing: 2px;
+                        color: Theme.current.text-primary;
+                    }
+                    
+                    Text {
+                        text: "CLIENT";
+                        font-size: 10px;
+                        font-weight: 600;
+                        letter-spacing: 3px;
+                        color: Theme.current.primary;
+                    }
+                }
+            }
+        }
+        
+        // Collapse toggle button
+        Rectangle {
+            height: 40px;
+            background: transparent;
+            
+            Rectangle {
+                width: collapsed ? 40px : 100%;
+                height: 40px;
+                x: collapsed ? (parent.width - self.width) / 2 : 0;
+                border-radius: 10px;
+                background: transparent;
+                
+                property <float> toggle-hover: 0;
+                animate toggle-hover { duration: 150ms; }
+                
+                Rectangle {
+                    width: 100%;
+                    height: 100%;
+                    border-radius: parent.border-radius;
+                    background: Theme.current.surface-elevated.with-alpha(toggle-hover);
+                }
+                
+                HorizontalLayout {
+                    alignment: center;
+                    spacing: 8px;
+                    
+                    Text {
+                        text: collapsed ? "\u{25B6}" : "\u{25C0}";
+                        font-size: 12px;
+                        color: Theme.current.text-secondary;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                        
+                        animate text { duration: 0ms; }
+                    }
+                    
+                    if !collapsed: Text {
+                        text: "Collapse";
+                        font-size: 13px;
+                        color: Theme.current.text-secondary;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                toggle-touch := TouchArea {
+                    mouse-cursor: pointer;
+                    // Toggle would be handled by parent
+                }
+                
+                states [
+                    hovered when toggle-touch.has-hover: {
+                        toggle-hover: 1.0;
+                    }
+                ]
+            }
+        }
+        
+        // Divider
+        Rectangle {
+            height: 1px;
+            background: Theme.current.border;
+            horizontal-stretch: 1;
+        }
+        
+        // Main navigation section
+        SidebarSection {
+            title: "NAVIGATION";
+            collapsed: root.collapsed;
+        }
+        
+        SidebarItem {
+            icon: "\u{1F3E0}"; // Home
+            label: "Home";
+            active: active-index == 0;
+            collapsed: root.collapsed;
+            clicked => { navigate(0); }
+        }
+        
+        SidebarItem {
+            icon: "\u{1F4E6}"; // Package - Instances
+            label: "Instances";
+            active: active-index == 1;
+            collapsed: root.collapsed;
+            clicked => { navigate(1); }
+        }
+        
+        SidebarItem {
+            icon: "\u{1F9E9}"; // Puzzle - Mods
+            label: "Mod Browser";
+            active: active-index == 2;
+            collapsed: root.collapsed;
+            has-badge: true;
+            badge-count: 12;
+            clicked => { navigate(2); }
+        }
+        
+        SidebarItem {
+            icon: "\u{1F3A8}"; // Palette - Skins
+            label: "Skin Manager";
+            active: active-index == 3;
+            collapsed: root.collapsed;
+            clicked => { navigate(3); }
+        }
+        
+        // Gaming section
+        Rectangle { height: 8px; }
+        
+        SidebarSection {
+            title: "GAMING";
+            collapsed: root.collapsed;
+        }
+        
+        SidebarItem {
+            icon: "\u{1F3AE}"; // Controller
+            label: "Quick Play";
+            active: active-index == 4;
+            collapsed: root.collapsed;
+            clicked => { navigate(4); }
+        }
+        
+        SidebarItem {
+            icon: "\u{1F465}"; // People - Multiplayer
+            label: "Servers";
+            active: active-index == 5;
+            collapsed: root.collapsed;
+            clicked => { navigate(5); }
+        }
+        
+        SidebarItem {
+            icon: "\u{1F4CA}"; // Chart
+            label: "Statistics";
+            active: active-index == 6;
+            collapsed: root.collapsed;
+            clicked => { navigate(6); }
+        }
+        
+        // Spacer
+        Rectangle {
+            vertical-stretch: 1;
+        }
+        
+        // Bottom section
+        SidebarSection {
+            title: "SYSTEM";
+            collapsed: root.collapsed;
+        }
+        
+        SidebarItem {
+            icon: "\u{1F4BB}"; // Laptop - Console
+            label: "Console";
+            active: active-index == 7;
+            collapsed: root.collapsed;
+            clicked => { navigate(7); }
+        }
+        
+        SidebarItem {
+            icon: "\u{2699}"; // Gear - Settings
+            label: "Settings";
+            active: active-index == 8;
+            collapsed: root.collapsed;
+            clicked => { navigate(8); }
+        }
+        
+        // Divider before user profile
+        Rectangle {
+            height: 1px;
+            background: Theme.current.border;
+            horizontal-stretch: 1;
+        }
+        
+        Rectangle { height: 8px; }
+        
+        // User profile at bottom
+        SidebarUserProfile {
+            username: root.username;
+            online: root.user-online;
+            collapsed: root.collapsed;
+            clicked => { user-profile-clicked(); }
+            settings-clicked => { root.settings-clicked(); }
+        }
+    }
+}
