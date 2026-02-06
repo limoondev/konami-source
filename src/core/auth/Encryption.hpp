@@ -11,7 +11,7 @@
 #include <vector>
 #include <cstdint>
 
-namespace nexus::core::auth {
+namespace konami::core::auth {
 
 /**
  * Encryption - AES-256-GCM encryption utilities
@@ -122,4 +122,4 @@ private:
     static std::vector<uint8_t> randomBytes(size_t length);
 };
 
-} // namespace nexus::core::auth
+} // namespace konami::core::auth

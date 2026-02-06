@@ -13,7 +13,7 @@
 #include <chrono>
 #include <future>
 
-namespace nexus::core::auth {
+namespace konami::core::auth {
 
 /**
  * OAuth2 token structure
@@ -241,4 +241,4 @@ private:
     std::optional<OAuthToken> m_oauthToken;
 };
 
-} // namespace nexus::core::auth
+} // namespace konami::core::auth

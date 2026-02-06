@@ -9,7 +9,7 @@
 #include <string>
 #include <atomic>
 
-namespace nexus::core::downloader {
+namespace konami::core::downloader {
 
 /**
  * Download task status
@@ -125,4 +125,4 @@ struct DownloadTask {
     }
 };
 
-} // namespace nexus::core::downloader
+} // namespace konami::core::downloader

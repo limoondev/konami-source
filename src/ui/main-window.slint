@@ -1,17 +1,7 @@
 // Konami Client - Main Window
-// Revolutionary Minecraft Launcher with premium UI
+// Premium Minecraft Launcher UI
 
-import { Theme, KonamiTheme } from "theme/theme.slint";
-import { KonamiCard, GlassCard } from "components/card.slint";
-import { KonamiButton, IconButton } from "components/button.slint";
-import { Sidebar, SidebarItem } from "components/sidebar.slint";
-import { AnimatedProgress, CircularProgress } from "components/progress.slint";
-
-import { HomePage, NewsItem, QuickAction } from "pages/home-page.slint";
-import { ModsPage, ModInfo, ModFilter } from "pages/mods-page.slint";
-import { ProfilesPage, ProfileInfo, CreateProfileDialog } from "pages/profiles-page.slint";
-import { SettingsPage, LauncherSettings } from "pages/settings-page.slint";
-import { SkinsPage, SkinInfo, CapeInfo } from "pages/skins-page.slint";
+import { Theme, ThemeManager } from "theme/theme.slint";
 
 // User account info
 export struct AccountInfo {
@@ -19,7 +9,7 @@ export struct AccountInfo {
     uuid: string,
     avatar-url: string,
     is-logged-in: bool,
-    account-type: string, // "microsoft", "offline"
+    account-type: string,
 }
 
 // Download progress
@@ -42,32 +32,22 @@ export struct GameStatus {
     uptime: string,
 }
 
-// Main window component
+// Main window
 export component MainWindow inherits Window {
     title: "Konami Client";
-    min-width: 1200px;
+    min-width: 1024px;
     min-height: 720px;
     default-font-family: "Inter";
     background: Theme.background;
-    
-    // Properties
+
     in property <string> current-page: "home";
     in property <AccountInfo> account;
     in property <DownloadProgress> download-progress;
     in property <GameStatus> game-status;
-    in property <[ProfileInfo]> profiles;
-    in property <[ModInfo]> installed-mods;
-    in property <[ModInfo]> available-mods;
-    in property <[SkinInfo]> skins;
-    in property <[CapeInfo]> capes;
-    in property <[NewsItem]> news;
-    in property <LauncherSettings> settings;
     in property <bool> is-launching: false;
     in property <float> launch-progress: 0;
-    in property <string> selected-profile-id;
     in property <string> current-version: "1.21.4";
-    
-    // Callbacks
+
     callback navigate(string);
     callback login();
     callback logout();
@@ -78,10 +58,9 @@ export component MainWindow inherits Window {
     callback close-window();
     callback open-settings();
     callback refresh-data();
-    
-    // Content
+
     VerticalLayout {
-        // Custom title bar
+        // Title bar
         TitleBar {
             account: account;
             minimize-clicked => { minimize-window(); }
@@ -90,35 +69,37 @@ export component MainWindow inherits Window {
             login-clicked => { login(); }
             logout-clicked => { logout(); }
         }
-        
-        // Main content area
+
+        // Main layout
         HorizontalLayout {
-            // Sidebar navigation
+            // Sidebar
             Rectangle {
                 width: 72px;
                 background: Theme.surface;
-                
+
                 VerticalLayout {
                     padding-top: 16px;
                     padding-bottom: 16px;
                     spacing: 8px;
                     alignment: start;
-                    
+
                     // Logo
                     Rectangle {
                         height: 56px;
-                        
+
                         Rectangle {
                             x: (parent.width - 48px) / 2;
                             y: (parent.height - 48px) / 2;
                             width: 48px;
                             height: 48px;
-                            border-radius: 12px;
+                            border-radius: 14px;
                             background: @linear-gradient(135deg, Theme.primary, Theme.accent);
-                            
+                            drop-shadow-blur: 12px;
+                            drop-shadow-color: Theme.glow;
+
                             Text {
                                 text: "K";
-                                font-size: 28px;
+                                font-size: 26px;
                                 font-weight: 800;
                                 color: white;
                                 horizontal-alignment: center;
@@ -126,118 +107,390 @@ export component MainWindow inherits Window {
                             }
                         }
                     }
-                    
+
                     Rectangle { height: 16px; }
-                    
-                    // Navigation items
+
                     NavItem {
-                        icon: "\u{f015}";
-                        tooltip: "Home";
+                        label: "Home";
                         is-active: current-page == "home";
                         clicked => { navigate("home"); }
                     }
-                    
+
                     NavItem {
-                        icon: "\u{f11b}";
-                        tooltip: "Profiles";
+                        label: "Profiles";
                         is-active: current-page == "profiles";
                         clicked => { navigate("profiles"); }
                     }
-                    
+
                     NavItem {
-                        icon: "\u{f12e}";
-                        tooltip: "Mods";
+                        label: "Mods";
                         is-active: current-page == "mods";
                         clicked => { navigate("mods"); }
                     }
-                    
+
                     NavItem {
-                        icon: "\u{f007}";
-                        tooltip: "Skins";
+                        label: "Skins";
                         is-active: current-page == "skins";
                         clicked => { navigate("skins"); }
                     }
-                    
+
                     Rectangle { vertical-stretch: 1; }
-                    
+
                     // Download indicator
                     if download-progress.is-downloading: Rectangle {
                         height: 48px;
-                        
-                        CircularProgress {
+
+                        Rectangle {
                             x: (parent.width - 36px) / 2;
                             y: (parent.height - 36px) / 2;
                             width: 36px;
                             height: 36px;
-                            progress: download-progress.total-progress;
+                            border-radius: 18px;
+                            border-width: 3px;
+                            border-color: Theme.surface-variant;
+
+                            // Progress arc (simplified as a filled circle clip)
+                            Rectangle {
+                                x: 0;
+                                y: 0;
+                                width: parent.width;
+                                height: parent.height * download-progress.total-progress;
+                                border-radius: 18px;
+                                background: Theme.primary;
+                                opacity: 0.4;
+                            }
                         }
                     }
-                    
+
                     NavItem {
-                        icon: "\u{f013}";
-                        tooltip: "Settings";
+                        label: "Settings";
                         is-active: current-page == "settings";
                         clicked => { navigate("settings"); }
                     }
                 }
             }
-            
+
             // Divider
             Rectangle {
                 width: 1px;
                 background: Theme.border;
             }
-            
-            // Page content
+
+            // Content area
             Rectangle {
                 horizontal-stretch: 1;
                 clip: true;
-                
-                // Home page
-                if current-page == "home": HomePage {
-                    account: account;
-                    selected-profile: profiles.length > 0 ? profiles[0].name : "No profile";
-                    current-version: current-version;
-                    is-launching: is-launching;
-                    launch-progress: launch-progress;
-                    news: news;
-                    game-running: game-status.is-running;
-                    
-                    launch-clicked => { launch-game(); }
-                    stop-clicked => { stop-game(); }
-                }
-                
-                // Profiles page
-                if current-page == "profiles": ProfilesPage {
-                    profiles: profiles;
-                    selected-profile-id: selected-profile-id;
-                }
-                
-                // Mods page
-                if current-page == "mods": ModsPage {
-                    installed-mods: installed-mods;
-                    search-results: available-mods;
-                }
-                
-                // Skins page
-                if current-page == "skins": SkinsPage {
-                    skins: skins;
-                    capes: capes;
-                    active-skin: skins.length > 0 ? skins[0] : {
-                        id: "default",
-                        name: "Steve",
-                        model-type: "classic",
-                        is-active: true,
-                    };
-                }
-                
-                // Settings page
-                if current-page == "settings": SettingsPage {
-                    settings: settings;
+                background: Theme.background;
+
+                // Home page content (inline)
+                VerticalLayout {
+                    padding: 32px;
+                    spacing: 28px;
+
+                    // Welcome header
+                    HorizontalLayout {
+                        spacing: 16px;
+
+                        VerticalLayout {
+                            spacing: 4px;
+                            horizontal-stretch: 1;
+
+                            Text {
+                                text: "Welcome back,";
+                                color: Theme.text-secondary;
+                                font-size: 14px;
+                                font-weight: 400;
+                            }
+
+                            Text {
+                                text: account.is-logged-in ? account.username : "Player";
+                                color: Theme.text-primary;
+                                font-size: 28px;
+                                font-weight: 700;
+                                letter-spacing: -0.5px;
+                            }
+                        }
+
+                        // Avatar
+                        Rectangle {
+                            width: 52px;
+                            height: 52px;
+                            border-radius: 14px;
+                            background: Theme.surface;
+                            border-width: 2px;
+                            border-color: Theme.primary;
+                            drop-shadow-blur: 8px;
+                            drop-shadow-color: Theme.glow;
+
+                            Text {
+                                text: account.is-logged-in ? 
+                                    account.username.character-count > 0 ? account.username : "?" 
+                                    : "?";
+                                font-size: 22px;
+                                font-weight: 700;
+                                color: Theme.primary;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+
+                    // Play card
+                    Rectangle {
+                        height: 180px;
+                        border-radius: 20px;
+                        background: Theme.surface;
+                        border-width: 1px;
+                        border-color: Theme.border;
+                        drop-shadow-blur: 20px;
+                        drop-shadow-color: Theme.glow;
+                        drop-shadow-offset-y: 4px;
+
+                        // Decorative glow
+                        Rectangle {
+                            x: parent.width - 180px;
+                            y: -40px;
+                            width: 200px;
+                            height: 200px;
+                            border-radius: 100px;
+                            background: Theme.primary;
+                            opacity: 0.06;
+                        }
+
+                        VerticalLayout {
+                            padding: 28px;
+                            spacing: 16px;
+
+                            HorizontalLayout {
+                                spacing: 16px;
+
+                                // Version badge
+                                Rectangle {
+                                    width: 60px;
+                                    height: 60px;
+                                    border-radius: 16px;
+                                    background: Theme.primary;
+                                    opacity: 0.15;
+
+                                    Rectangle {
+                                        width: parent.width;
+                                        height: parent.height;
+                                        border-radius: 16px;
+
+                                        Text {
+                                            text: "MC";
+                                            font-size: 18px;
+                                            font-weight: 800;
+                                            color: Theme.primary;
+                                            horizontal-alignment: center;
+                                            vertical-alignment: center;
+                                        }
+                                    }
+                                }
+
+                                VerticalLayout {
+                                    spacing: 6px;
+                                    horizontal-stretch: 1;
+
+                                    Text {
+                                        text: "Minecraft " + current-version;
+                                        color: Theme.text-primary;
+                                        font-size: 20px;
+                                        font-weight: 600;
+                                    }
+
+                                    HorizontalLayout {
+                                        spacing: 8px;
+
+                                        Rectangle {
+                                            height: 24px;
+                                            border-radius: 12px;
+                                            background: Theme.primary;
+                                            opacity: 0.15;
+
+                                            HorizontalLayout {
+                                                padding-left: 12px;
+                                                padding-right: 12px;
+
+                                                Text {
+                                                    text: current-version;
+                                                    color: Theme.primary;
+                                                    font-size: 12px;
+                                                    font-weight: 600;
+                                                    vertical-alignment: center;
+                                                }
+                                            }
+                                        }
+
+                                        Rectangle {
+                                            height: 24px;
+                                            border-radius: 12px;
+                                            background: Theme.accent;
+                                            opacity: 0.15;
+
+                                            HorizontalLayout {
+                                                padding-left: 12px;
+                                                padding-right: 12px;
+
+                                                Text {
+                                                    text: "Ready";
+                                                    color: Theme.accent;
+                                                    font-size: 12px;
+                                                    font-weight: 600;
+                                                    vertical-alignment: center;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            Rectangle { vertical-stretch: 1; }
+
+                            // Play button or progress bar
+                            if !is-launching: HorizontalLayout {
+                                spacing: 12px;
+
+                                // PLAY button
+                                Rectangle {
+                                    height: 44px;
+                                    horizontal-stretch: 1;
+                                    border-radius: 12px;
+                                    background: play-touch.has-hover 
+                                        ? Theme.primary-hover 
+                                        : Theme.primary;
+                                    drop-shadow-blur: play-touch.has-hover ? 16px : 0px;
+                                    drop-shadow-color: Theme.glow;
+
+                                    animate background { duration: 150ms; }
+                                    animate drop-shadow-blur { duration: 200ms; }
+
+                                    play-touch := TouchArea {
+                                        mouse-cursor: pointer;
+                                        clicked => { launch-game(); }
+                                    }
+
+                                    Text {
+                                        text: game-status.is-running ? "STOP" : "PLAY";
+                                        font-size: 15px;
+                                        font-weight: 700;
+                                        letter-spacing: 2px;
+                                        color: Theme.text-on-primary;
+                                        horizontal-alignment: center;
+                                        vertical-alignment: center;
+                                    }
+                                }
+                            }
+
+                            if is-launching: VerticalLayout {
+                                spacing: 8px;
+
+                                Text {
+                                    text: "Launching...";
+                                    color: Theme.text-secondary;
+                                    font-size: 12px;
+                                }
+
+                                Rectangle {
+                                    height: 6px;
+                                    border-radius: 3px;
+                                    background: Theme.surface-variant;
+
+                                    Rectangle {
+                                        width: launch-progress * parent.width;
+                                        height: 100%;
+                                        border-radius: 3px;
+                                        background: @linear-gradient(90deg, Theme.primary, Theme.accent);
+
+                                        animate width { duration: 200ms; }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Stats row
+                    HorizontalLayout {
+                        spacing: 16px;
+
+                        StatCard {
+                            title: "Status";
+                            value: game-status.is-running ? "Running" : "Idle";
+                            accent: Theme.success;
+                            horizontal-stretch: 1;
+                        }
+
+                        StatCard {
+                            title: "Version";
+                            value: current-version;
+                            accent: Theme.primary;
+                            horizontal-stretch: 1;
+                        }
+
+                        StatCard {
+                            title: "Account";
+                            value: account.is-logged-in ? "Connected" : "Offline";
+                            accent: account.is-logged-in ? Theme.info : Theme.warning;
+                            horizontal-stretch: 1;
+                        }
+                    }
+
+                    // Info panel
+                    Rectangle {
+                        vertical-stretch: 1;
+                        border-radius: 16px;
+                        background: Theme.surface;
+                        border-width: 1px;
+                        border-color: Theme.border;
+
+                        VerticalLayout {
+                            padding: 24px;
+                            spacing: 16px;
+
+                            Text {
+                                text: "Quick Start";
+                                color: Theme.text-primary;
+                                font-size: 16px;
+                                font-weight: 600;
+                            }
+
+                            Text {
+                                text: "Select a profile from the sidebar, configure your mods, and hit PLAY to launch Minecraft with Konami Client.";
+                                color: Theme.text-secondary;
+                                font-size: 13px;
+                                wrap: word-wrap;
+                            }
+
+                            Rectangle { vertical-stretch: 1; }
+
+                            // Quick action buttons
+                            HorizontalLayout {
+                                spacing: 12px;
+
+                                QuickActionButton {
+                                    label: "Profiles";
+                                    clicked => { navigate("profiles"); }
+                                    horizontal-stretch: 1;
+                                }
+
+                                QuickActionButton {
+                                    label: "Mods";
+                                    clicked => { navigate("mods"); }
+                                    horizontal-stretch: 1;
+                                }
+
+                                QuickActionButton {
+                                    label: "Settings";
+                                    clicked => { navigate("settings"); }
+                                    horizontal-stretch: 1;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
-        
+
         // Status bar
         StatusBar {
             download-progress: download-progress;
@@ -247,60 +500,75 @@ export component MainWindow inherits Window {
     }
 }
 
-// Custom title bar
+// ============================================================================
+// Components
+// ============================================================================
+
+// Title bar
 component TitleBar inherits Rectangle {
     in property <AccountInfo> account;
-    
+
     callback minimize-clicked();
     callback maximize-clicked();
     callback close-clicked();
     callback login-clicked();
     callback logout-clicked();
-    
-    height: 40px;
+
+    height: 42px;
     background: Theme.surface;
-    
+
     HorizontalLayout {
         padding-left: 16px;
         padding-right: 8px;
         alignment: space-between;
-        
-        // Drag area / Title
+
         Rectangle {
             horizontal-stretch: 1;
-            
-            Text {
-                text: "Konami Client";
-                font-size: 13px;
-                font-weight: 600;
-                color: Theme.text-secondary;
-                vertical-alignment: center;
+
+            HorizontalLayout {
+                spacing: 8px;
+
+                Text {
+                    text: "Konami Client";
+                    font-size: 13px;
+                    font-weight: 700;
+                    color: Theme.primary;
+                    vertical-alignment: center;
+                }
+
+                Text {
+                    text: "v1.0.0";
+                    font-size: 11px;
+                    font-weight: 400;
+                    color: Theme.text-tertiary;
+                    vertical-alignment: center;
+                }
             }
         }
-        
-        // Account section
+
         HorizontalLayout {
             spacing: 12px;
-            
+
             if account.is-logged-in: HorizontalLayout {
                 spacing: 8px;
-                
-                // Avatar
+
                 Rectangle {
                     width: 28px;
                     height: 28px;
-                    border-radius: 6px;
-                    background: Theme.primary.with-alpha(0.2);
-                    
+                    border-radius: 8px;
+                    background: Theme.primary;
+                    opacity: 0.2;
+
                     Text {
-                        text: "\u{f007}";
-                        font-size: 14px;
+                        font-size: 13px;
+                        font-weight: 700;
                         color: Theme.primary;
                         horizontal-alignment: center;
                         vertical-alignment: center;
+                        text: account.username.character-count > 0 ? account.username : "U";
                     }
                 }
-                
+
                 Text {
                     text: account.username;
                     font-size: 13px;
@@ -308,180 +576,233 @@ component TitleBar inherits Rectangle {
                     color: Theme.text-primary;
                     vertical-alignment: center;
                 }
-                
+
                 Rectangle {
                     width: 28px;
                     height: 28px;
                     border-radius: 6px;
-                    background: logout-touch.has-hover ? Theme.surface-variant : transparent;
-                    
-                    logout-touch := TouchArea {
+                    background: lo-touch.has-hover ? Theme.surface-variant : transparent;
+
+                    lo-touch := TouchArea {
                         mouse-cursor: pointer;
                         clicked => { logout-clicked(); }
                     }
-                    
+
                     Text {
-                        text: "\u{f2f5}";
-                        font-size: 12px;
+                        text: "X";
+                        font-size: 10px;
+                        font-weight: 600;
                         color: Theme.text-tertiary;
                         horizontal-alignment: center;
                         vertical-alignment: center;
                     }
                 }
             }
-            
+
             if !account.is-logged-in: Rectangle {
                 width: 80px;
                 height: 28px;
-                border-radius: 6px;
-                background: login-touch.has-hover ? Theme.primary-hover : Theme.primary;
-                
-                login-touch := TouchArea {
+                border-radius: 8px;
+                background: li-touch.has-hover ? Theme.primary-hover : Theme.primary;
+
+                animate background { duration: 120ms; }
+
+                li-touch := TouchArea {
                     mouse-cursor: pointer;
                     clicked => { login-clicked(); }
                 }
-                
+
                 Text {
                     text: "Login";
                     font-size: 12px;
-                    font-weight: 500;
+                    font-weight: 600;
                     color: Theme.text-on-primary;
                     horizontal-alignment: center;
                     vertical-alignment: center;
                 }
             }
-            
+
             Rectangle { width: 8px; }
-            
+
             // Window controls
             HorizontalLayout {
-                spacing: 4px;
-                
-                // Minimize
-                Rectangle {
-                    width: 32px;
-                    height: 28px;
-                    border-radius: 4px;
-                    background: min-touch.has-hover ? Theme.surface-variant : transparent;
-                    
-                    min-touch := TouchArea {
-                        mouse-cursor: pointer;
-                        clicked => { minimize-clicked(); }
-                    }
-                    
-                    Text {
-                        text: "\u{f2d1}";
-                        font-size: 10px;
-                        color: Theme.text-secondary;
-                        horizontal-alignment: center;
-                        vertical-alignment: center;
-                    }
+                spacing: 2px;
+
+                WinBtn {
+                    label: "_";
+                    hovered-bg: Theme.surface-variant;
+                    clicked => { minimize-clicked(); }
                 }
-                
-                // Maximize
-                Rectangle {
-                    width: 32px;
-                    height: 28px;
-                    border-radius: 4px;
-                    background: max-touch.has-hover ? Theme.surface-variant : transparent;
-                    
-                    max-touch := TouchArea {
-                        mouse-cursor: pointer;
-                        clicked => { maximize-clicked(); }
-                    }
-                    
-                    Text {
-                        text: "\u{f2d0}";
-                        font-size: 10px;
-                        color: Theme.text-secondary;
-                        horizontal-alignment: center;
-                        vertical-alignment: center;
-                    }
+
+                WinBtn {
+                    label: "[ ]";
+                    hovered-bg: Theme.surface-variant;
+                    clicked => { maximize-clicked(); }
                 }
-                
-                // Close
-                Rectangle {
-                    width: 32px;
-                    height: 28px;
-                    border-radius: 4px;
-                    background: close-touch.has-hover ? Theme.error : transparent;
-                    
-                    close-touch := TouchArea {
-                        mouse-cursor: pointer;
-                        clicked => { close-clicked(); }
-                    }
-                    
-                    Text {
-                        text: "\u{f00d}";
-                        font-size: 12px;
-                        color: close-touch.has-hover ? white : Theme.text-secondary;
-                        horizontal-alignment: center;
-                        vertical-alignment: center;
-                    }
+
+                WinBtn {
+                    label: "X";
+                    hovered-bg: Theme.error;
+                    hovered-fg: white;
+                    clicked => { close-clicked(); }
                 }
             }
         }
     }
 }
 
-// Navigation item
-component NavItem inherits Rectangle {
-    in property <string> icon;
-    in property <string> tooltip;
-    in property <bool> is-active;
-    in property <bool> has-notification: false;
-    
+// Window control button
+component WinBtn inherits Rectangle {
+    in property <string> label;
+    in property <color> hovered-bg: Theme.surface-variant;
+    in property <color> hovered-fg: Theme.text-secondary;
+
     callback clicked();
-    
+
+    width: 36px;
+    height: 28px;
+    border-radius: 6px;
+    background: wb-touch.has-hover ? hovered-bg : transparent;
+
+    animate background { duration: 100ms; }
+
+    wb-touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+
+    Text {
+        text: label;
+        font-size: 10px;
+        font-weight: 600;
+        color: wb-touch.has-hover ? hovered-fg : Theme.text-secondary;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+}
+
+// Sidebar nav item
+component NavItem inherits Rectangle {
+    in property <string> label;
+    in property <bool> is-active: false;
+
+    callback clicked();
+
     height: 48px;
-    
+
     Rectangle {
         x: (parent.width - 48px) / 2;
         y: 0;
         width: 48px;
         height: 48px;
-        border-radius: 12px;
-        background: is-active ? Theme.primary.with-alpha(0.15) : 
-                    touch.has-hover ? Theme.surface-variant : transparent;
-        
-        animate background { duration: 150ms; }
-        
-        touch := TouchArea {
+        border-radius: 14px;
+        background: is-active ? Theme.primary.with-alpha(0.15)
+                    : nav-touch.has-hover ? Theme.surface-variant
+                    : transparent;
+
+        animate background { duration: 120ms; }
+
+        nav-touch := TouchArea {
             mouse-cursor: pointer;
             clicked => { root.clicked(); }
         }
-        
+
         Text {
-            text: icon;
-            font-size: 20px;
+            text: label.character-count > 0 ? label : "?";
+            font-size: 10px;
+            font-weight: is-active ? 700 : 500;
             color: is-active ? Theme.primary : Theme.text-secondary;
             horizontal-alignment: center;
             vertical-alignment: center;
-            
-            animate color { duration: 150ms; }
+
+            animate color { duration: 120ms; }
         }
-        
-        // Active indicator
+
+        // Active indicator bar
         if is-active: Rectangle {
-            x: 0;
+            x: -12px;
             y: (parent.height - 24px) / 2;
             width: 3px;
             height: 24px;
-            border-radius: 0 2px 2px 0;
+            border-radius: 2px;
             background: Theme.primary;
         }
-        
-        // Notification dot
-        if has-notification: Rectangle {
-            x: parent.width - 14px;
-            y: 6px;
-            width: 10px;
-            height: 10px;
-            border-radius: 5px;
-            background: Theme.error;
-            border-width: 2px;
-            border-color: Theme.surface;
+    }
+}
+
+// Stat card
+component StatCard inherits Rectangle {
+    in property <string> title;
+    in property <string> value;
+    in property <color> accent: Theme.primary;
+
+    height: 80px;
+    border-radius: 14px;
+    background: Theme.surface;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    HorizontalLayout {
+        padding: 16px;
+        spacing: 12px;
+
+        // Accent bar
+        Rectangle {
+            width: 4px;
+            height: 100%;
+            border-radius: 2px;
+            background: accent;
         }
+
+        VerticalLayout {
+            spacing: 4px;
+
+            Text {
+                text: title;
+                color: Theme.text-tertiary;
+                font-size: 11px;
+                font-weight: 500;
+                letter-spacing: 0.5px;
+            }
+
+            Text {
+                text: value;
+                color: Theme.text-primary;
+                font-size: 18px;
+                font-weight: 700;
+            }
+        }
+    }
+}
+
+// Quick action button
+component QuickActionButton inherits Rectangle {
+    in property <string> label;
+    callback clicked();
+
+    height: 40px;
+    border-radius: 10px;
+    background: qa-touch.has-hover ? Theme.surface-active : Theme.surface-variant;
+    border-width: 1px;
+    border-color: qa-touch.has-hover ? Theme.border-hover : Theme.border;
+
+    animate background { duration: 120ms; }
+    animate border-color { duration: 120ms; }
+
+    qa-touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+
+    Text {
+        text: label;
+        font-size: 13px;
+        font-weight: 500;
+        color: qa-touch.has-hover ? Theme.text-primary : Theme.text-secondary;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+
+        animate color { duration: 120ms; }
     }
 }
 
@@ -490,41 +811,39 @@ component StatusBar inherits Rectangle {
     in property <DownloadProgress> download-progress;
     in property <GameStatus> game-status;
     in property <string> current-version;
-    
+
     height: 32px;
     background: Theme.surface;
     border-width: 1px 0 0 0;
     border-color: Theme.border;
-    
+
     HorizontalLayout {
         padding-left: 16px;
         padding-right: 16px;
         alignment: space-between;
-        
-        // Left side - Download info
+
         HorizontalLayout {
             spacing: 16px;
-            
+
             if download-progress.is-downloading: HorizontalLayout {
                 spacing: 8px;
-                
-                // Progress indicator
+
                 Rectangle {
-                    width: 100px;
+                    width: 120px;
                     height: 4px;
                     border-radius: 2px;
                     background: Theme.surface-variant;
-                    
+
                     Rectangle {
                         width: download-progress.total-progress * parent.width;
                         height: 100%;
                         border-radius: 2px;
                         background: Theme.primary;
-                        
+
                         animate width { duration: 200ms; }
                     }
                 }
-                
+
                 Text {
                     text: download-progress.download-speed + " - " + download-progress.eta;
                     font-size: 11px;
@@ -532,24 +851,17 @@ component StatusBar inherits Rectangle {
                     vertical-alignment: center;
                 }
             }
-            
+
             if game-status.is-running: HorizontalLayout {
                 spacing: 6px;
-                
-                // Running indicator
+
                 Rectangle {
                     width: 8px;
                     height: 8px;
                     border-radius: 4px;
                     background: Theme.success;
-                    
-                    // Pulse animation
-                    animate opacity {
-                        duration: 1000ms;
-                        iteration-count: -1;
-                    }
                 }
-                
+
                 Text {
                     text: "Minecraft running - " + game-status.memory-usage + " RAM";
                     font-size: 11px;
@@ -558,24 +870,23 @@ component StatusBar inherits Rectangle {
                 }
             }
         }
-        
-        // Right side - Version info
+
         HorizontalLayout {
-            spacing: 16px;
-            
+            spacing: 12px;
+
             Text {
                 text: "Konami Client v1.0.0";
                 font-size: 11px;
                 color: Theme.text-tertiary;
                 vertical-alignment: center;
             }
-            
+
             Rectangle {
                 width: 1px;
-                height: 16px;
+                height: 14px;
                 background: Theme.border;
             }
-            
+
             Text {
                 text: "MC " + current-version;
                 font-size: 11px;

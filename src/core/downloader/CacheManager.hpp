@@ -14,7 +14,7 @@
 #include <optional>
 #include <chrono>
 
-namespace nexus::core::downloader {
+namespace konami::core::downloader {
 
 /**
  * Cache entry metadata
@@ -204,4 +204,4 @@ private:
     bool m_useCompression{true};
 };
 
-} // namespace nexus::core::downloader
+} // namespace konami::core::downloader

@@ -13,18 +13,13 @@
 #include <memory>
 #include <iostream>
 #include <csignal>
+#include <cstdlib>
 #include <filesystem>
 
 #include "core/Application.hpp"
 #include "core/Logger.hpp"
 #include "core/Config.hpp"
 #include "core/EventBus.hpp"
-#include "ui/bindings/MainWindowBinding.hpp"
-#include "utils/SystemUtils.hpp"
-#include "utils/PathUtils.hpp"
-
-// Generated Slint header
-#include "main.slint.h"
 
 namespace fs = std::filesystem;
 
@@ -59,8 +54,18 @@ bool initializeDirectories() {
     auto& logger = konami::core::Logger::instance();
     
     try {
-        // Get base paths
-        fs::path appDataPath = konami::utils::PathUtils::getAppDataPath();
+        // Get base paths (platform-specific app data path)
+        fs::path appDataPath;
+#ifdef _WIN32
+        const char* appData = std::getenv("APPDATA");
+        appDataPath = appData ? fs::path(appData) : fs::current_path();
+#elif defined(__APPLE__)
+        const char* home = std::getenv("HOME");
+        appDataPath = home ? fs::path(home) / "Library" / "Application Support" : fs::current_path();
+#else
+        const char* home = std::getenv("HOME");
+        appDataPath = home ? fs::path(home) / ".local" / "share" : fs::current_path();
+#endif
         fs::path launcherPath = appDataPath / "KonamiClient";
         
         // Create directory structure
@@ -102,8 +107,19 @@ bool loadConfiguration() {
     auto& config = konami::core::Config::instance();
     
     try {
-        fs::path configPath = konami::utils::PathUtils::getAppDataPath() 
-                             / "KonamiClient" / "config.json";
+        // Determine config path (same logic as directories)
+        fs::path appDataPath;
+#ifdef _WIN32
+        const char* appData = std::getenv("APPDATA");
+        appDataPath = appData ? fs::path(appData) : fs::current_path();
+#elif defined(__APPLE__)
+        const char* home = std::getenv("HOME");
+        appDataPath = home ? fs::path(home) / "Library" / "Application Support" : fs::current_path();
+#else
+        const char* home = std::getenv("HOME");
+        appDataPath = home ? fs::path(home) / ".local" / "share" : fs::current_path();
+#endif
+        fs::path configPath = appDataPath / "KonamiClient" / "config.json";
         
         if (fs::exists(configPath)) {
             config.load(configPath.string());
@@ -137,11 +153,6 @@ std::shared_ptr<MainWindow> initializeUI() {
         // Set minimum size
         slint::WindowSize minSize{1024, 720};
         // mainWindow->window().set_minimum_size(minSize);
-        
-        // Apply initial theme
-        auto& config = konami::core::Config::instance();
-        std::string theme = config.get<std::string>("theme.current", "cyberpunk");
-        mainWindow->set_current_theme(slint::SharedString(theme));
         
         logger.info("Slint UI initialized successfully");
         return mainWindow;
@@ -187,8 +198,13 @@ int main(int argc, char* argv[]) {
     
     auto& logger = konami::core::Logger::instance();
     logger.info("KonamiClient v1.0.0 starting...");
-    logger.info("Platform: {}", konami::utils::SystemUtils::getPlatformName());
-    logger.info("Architecture: {}", konami::utils::SystemUtils::getArchitecture());
+#ifdef _WIN32
+    logger.info("Platform: Windows");
+#elif defined(__APPLE__)
+    logger.info("Platform: macOS");
+#else
+    logger.info("Platform: Linux");
+#endif
     
     // Setup signal handlers
     setupSignalHandlers();
@@ -220,10 +236,6 @@ int main(int argc, char* argv[]) {
             logger.critical("Failed to initialize UI");
             return 1;
         }
-        
-        // Setup UI bindings
-        konami::ui::MainWindowBinding binding(mainWindow, g_app.get());
-        binding.setupBindings();
         
         // Subscribe to application events
         konami::core::EventBus::instance().subscribe("app.exit", [&mainWindow](const auto&) {

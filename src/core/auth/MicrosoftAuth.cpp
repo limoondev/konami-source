@@ -12,7 +12,7 @@
 #include <thread>
 #include <chrono>
 
-namespace nexus::core::auth {
+namespace konami::core::auth {
 
 using json = nlohmann::json;
 
@@ -526,4 +526,4 @@ std::optional<OAuthToken> MicrosoftAuth::refreshOAuthToken(const std::string& re
     }
 }
 
-} // namespace nexus::core::auth
+} // namespace konami::core::auth

@@ -17,7 +17,7 @@
 #include <atomic>
 #include <stdexcept>
 
-namespace nexus::core {
+namespace konami::core {
 
 /**
  * ThreadPool - Work-stealing thread pool
@@ -263,4 +263,4 @@ private:
     std::atomic<size_t> m_activeJobs;
 };
 
-} // namespace nexus::core
+} // namespace konami::core

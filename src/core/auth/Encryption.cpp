@@ -16,7 +16,7 @@
 #include <cstring>
 #include <memory>
 
-namespace nexus::core::auth {
+namespace konami::core::auth {
 
 // RAII wrapper for EVP_CIPHER_CTX
 struct CipherContextDeleter {
@@ -294,4 +294,4 @@ std::vector<uint8_t> Encryption::randomBytes(size_t length) {
     return bytes;
 }
 
-} // namespace nexus::core::auth
+} // namespace konami::core::auth

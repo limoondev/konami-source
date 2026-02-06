@@ -19,7 +19,7 @@
 #include <thread>
 #include <chrono>
 
-namespace nexus::core {
+namespace konami::core {
 
 Application::Application() {
     Logger::instance().debug("Application instance created");
@@ -116,7 +116,7 @@ void Application::shutdown() {
     
     // Save configuration
     Config::instance().save(
-        utils::PathUtils::getAppDataPath().string() + "/NexusLauncher/config.json"
+        utils::PathUtils::getAppDataPath().string() + "/KonamiClient/config.json"
     );
     
     // Shutdown subsystems in reverse order
@@ -306,4 +306,4 @@ bool Application::initializePluginManager() {
     }
 }
 
-} // namespace nexus::core
+} // namespace konami::core

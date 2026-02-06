@@ -16,7 +16,7 @@
 #include <memory>
 #include <atomic>
 
-namespace nexus::core {
+namespace konami::core {
 
 using json = nlohmann::json;
 using EventCallback = std::function<void(const json&)>;
@@ -222,4 +222,4 @@ private:
     std::atomic<uint64_t> m_nextId{0};
 };
 
-} // namespace nexus::core
+} // namespace konami::core

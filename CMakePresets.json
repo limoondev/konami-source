@@ -12,15 +12,14 @@
             "binaryDir": "${sourceDir}/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-                "KONAMI_ENABLE_LTO": "ON",
                 "KONAMI_STATIC_LINKING": "ON"
             }
         },
         {
             "name": "windows-debug",
-            "displayName": "Windows Debug (VS 2026)",
+            "displayName": "Windows Debug (VS 2022)",
             "inherits": "default",
-            "generator": "Visual Studio 18 2026",
+            "generator": "Visual Studio 17 2022",
             "architecture": {
                 "value": "x64",
                 "strategy": "set"
@@ -40,9 +39,9 @@
         },
         {
             "name": "windows-release",
-            "displayName": "Windows Release (VS 2026)",
+            "displayName": "Windows Release (VS 2022)",
             "inherits": "default",
-            "generator": "Visual Studio 18 2026",
+            "generator": "Visual Studio 17 2022",
             "architecture": {
                 "value": "x64",
                 "strategy": "set"
@@ -50,6 +49,42 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "KONAMI_BUILD_TESTS": "OFF",
+                "KONAMI_ENABLE_LTO": "ON",
+                "KONAMI_ENABLE_VULKAN": "ON",
+                "KONAMI_ENABLE_DIRECTX": "ON",
+                "KONAMI_NATIVE_OPTIMIZATIONS": "ON"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "windows-ninja-debug",
+            "displayName": "Windows Debug (Ninja)",
+            "inherits": "default",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "KONAMI_BUILD_TESTS": "ON",
+                "KONAMI_ENABLE_VULKAN": "ON",
+                "KONAMI_ENABLE_DIRECTX": "ON"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "windows-ninja-release",
+            "displayName": "Windows Release (Ninja)",
+            "inherits": "default",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "KONAMI_ENABLE_LTO": "ON",
                 "KONAMI_ENABLE_VULKAN": "ON",
                 "KONAMI_ENABLE_DIRECTX": "ON",
                 "KONAMI_NATIVE_OPTIMIZATIONS": "ON"
@@ -68,6 +103,7 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_C_COMPILER": "gcc",
                 "KONAMI_BUILD_TESTS": "ON",
                 "KONAMI_ENABLE_ASAN": "ON",
                 "KONAMI_ENABLE_VULKAN": "ON"
@@ -86,7 +122,9 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_C_COMPILER": "gcc",
                 "KONAMI_BUILD_TESTS": "OFF",
+                "KONAMI_ENABLE_LTO": "ON",
                 "KONAMI_ENABLE_VULKAN": "ON",
                 "KONAMI_NATIVE_OPTIMIZATIONS": "ON"
             },
@@ -104,6 +142,7 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_C_COMPILER": "clang",
                 "KONAMI_BUILD_TESTS": "ON",
                 "KONAMI_ENABLE_METAL": "ON"
             },
@@ -121,7 +160,9 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_C_COMPILER": "clang",
                 "KONAMI_BUILD_TESTS": "OFF",
+                "KONAMI_ENABLE_LTO": "ON",
                 "KONAMI_ENABLE_METAL": "ON",
                 "KONAMI_NATIVE_OPTIMIZATIONS": "ON"
             },
@@ -142,6 +183,14 @@
             "name": "windows-release",
             "configurePreset": "windows-release",
             "configuration": "Release"
+        },
+        {
+            "name": "windows-ninja-debug",
+            "configurePreset": "windows-ninja-debug"
+        },
+        {
+            "name": "windows-ninja-release",
+            "configurePreset": "windows-ninja-release"
         },
         {
             "name": "linux-debug",

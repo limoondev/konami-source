@@ -22,7 +22,7 @@
 // libsecret would be used here for Linux
 #endif
 
-namespace nexus::core::auth {
+namespace konami::core::auth {
 
 using json = nlohmann::json;
 
@@ -167,14 +167,14 @@ bool TokenStorage::storeInKeychain(const std::string& key, const std::string& to
     CREDENTIALW cred = {};
     cred.Type = CRED_TYPE_GENERIC;
     
-    std::wstring targetName = L"NexusLauncher:" + std::wstring(key.begin(), key.end());
+    std::wstring targetName = L"KonamiClient:" + std::wstring(key.begin(), key.end());
     cred.TargetName = const_cast<LPWSTR>(targetName.c_str());
     
     cred.CredentialBlobSize = static_cast<DWORD>(token.size());
     cred.CredentialBlob = reinterpret_cast<LPBYTE>(const_cast<char*>(token.data()));
     cred.Persist = CRED_PERSIST_LOCAL_MACHINE;
     
-    std::wstring username = L"NexusLauncher";
+    std::wstring username = L"KonamiClient";
     cred.UserName = const_cast<LPWSTR>(username.c_str());
     
     return CredWriteW(&cred, 0) == TRUE;
@@ -216,7 +216,7 @@ bool TokenStorage::storeInKeychain(const std::string& key, const std::string& to
 
 std::optional<std::string> TokenStorage::getFromKeychain(const std::string& key) const {
 #ifdef _WIN32
-    std::wstring targetName = L"NexusLauncher:" + std::wstring(key.begin(), key.end());
+    std::wstring targetName = L"KonamiClient:" + std::wstring(key.begin(), key.end());
     
     PCREDENTIALW cred = nullptr;
     if (CredReadW(targetName.c_str(), CRED_TYPE_GENERIC, 0, &cred)) {
@@ -260,7 +260,7 @@ std::optional<std::string> TokenStorage::getFromKeychain(const std::string& key)
 
 bool TokenStorage::removeFromKeychain(const std::string& key) {
 #ifdef _WIN32
-    std::wstring targetName = L"NexusLauncher:" + std::wstring(key.begin(), key.end());
+    std::wstring targetName = L"KonamiClient:" + std::wstring(key.begin(), key.end());
     return CredDeleteW(targetName.c_str(), CRED_TYPE_GENERIC, 0) == TRUE;
     
 #elif defined(__APPLE__)
@@ -356,4 +356,4 @@ void TokenStorage::saveToFile() const {
     }
 }
 
-} // namespace nexus::core::auth
+} // namespace konami::core::auth

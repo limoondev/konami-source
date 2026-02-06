@@ -20,7 +20,7 @@
 #include <memory>
 #include <unordered_map>
 
-namespace nexus::core::downloader {
+namespace konami::core::downloader {
 
 /**
  * Download progress callback
@@ -280,4 +280,4 @@ private:
     bool m_initialized{false};
 };
 
-} // namespace nexus::core::downloader
+} // namespace konami::core::downloader

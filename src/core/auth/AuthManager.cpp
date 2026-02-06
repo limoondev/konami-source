@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <fstream>
 
-namespace nexus::core::auth {
+namespace konami::core::auth {
 
 AuthManager::AuthManager()
     : m_microsoftAuth(std::make_unique<MicrosoftAuth>())
@@ -30,7 +30,7 @@ void AuthManager::initialize() {
     Logger::instance().info("Initializing AuthManager");
     
     // Initialize token storage
-    auto storagePath = utils::PathUtils::getAppDataPath() / "NexusLauncher" / "accounts";
+    auto storagePath = utils::PathUtils::getAppDataPath() / "KonamiClient" / "accounts";
     m_tokenStorage->initialize(storagePath.string());
     
     // Load saved accounts
@@ -351,7 +351,7 @@ void AuthManager::cancelAuthentication() {
 }
 
 void AuthManager::loadAccounts() {
-    auto accountsPath = utils::PathUtils::getAppDataPath() / "NexusLauncher" / "accounts.json";
+    auto accountsPath = utils::PathUtils::getAppDataPath() / "KonamiClient" / "accounts.json";
     
     if (!std::filesystem::exists(accountsPath)) {
         return;
@@ -383,7 +383,7 @@ void AuthManager::loadAccounts() {
 }
 
 void AuthManager::saveAccounts() {
-    auto accountsPath = utils::PathUtils::getAppDataPath() / "NexusLauncher" / "accounts.json";
+    auto accountsPath = utils::PathUtils::getAppDataPath() / "KonamiClient" / "accounts.json";
     
     try {
         nlohmann::json json;
@@ -432,4 +432,4 @@ bool AuthManager::needsRefresh(const models::Account& account) const {
     return now >= (account.tokenExpiry - buffer);
 }
 
-} // namespace nexus::core::auth
+} // namespace konami::core::auth

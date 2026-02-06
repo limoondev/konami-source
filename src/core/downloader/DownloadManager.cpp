@@ -14,7 +14,7 @@
 #include <fstream>
 #include <chrono>
 
-namespace nexus::core::downloader {
+namespace konami::core::downloader {
 
 DownloadManager::DownloadManager()
     : m_cacheManager(std::make_unique<CacheManager>()) {
@@ -35,7 +35,7 @@ void DownloadManager::initialize() {
     m_bandwidthLimit = config.get<size_t>("downloads.bandwidthLimit", 0);
     
     // Initialize cache
-    auto cachePath = utils::PathUtils::getAppDataPath() / "NexusLauncher" / "cache";
+    auto cachePath = utils::PathUtils::getAppDataPath() / "KonamiClient" / "cache";
     m_cacheManager->initialize(cachePath.string());
     
     // Create thread pool
@@ -406,4 +406,4 @@ std::string DownloadManager::generateTaskId() {
     return "dl_" + std::to_string(++m_nextTaskId);
 }
 
-} // namespace nexus::core::downloader
+} // namespace konami::core::downloader

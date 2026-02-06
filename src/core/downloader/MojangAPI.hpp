@@ -14,7 +14,7 @@
 
 #include <nlohmann/json.hpp>
 
-namespace nexus::core::downloader {
+namespace konami::core::downloader {
 
 /**
  * Version type enum
@@ -226,4 +226,4 @@ private:
     std::string m_latestSnapshot;
 };
 
-} // namespace nexus::core::downloader
+} // namespace konami::core::downloader

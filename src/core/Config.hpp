@@ -14,7 +14,7 @@
 #include <fstream>
 #include <filesystem>
 
-namespace nexus::core {
+namespace konami::core {
 
 using json = nlohmann::json;
 
@@ -279,4 +279,4 @@ private:
     std::string m_configPath;
 };
 
-} // namespace nexus::core
+} // namespace konami::core

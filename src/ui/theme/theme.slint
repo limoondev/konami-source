@@ -411,3 +411,42 @@ export global ThemeManager {
         current-theme = mod(current-theme + 1, 5);
     }
 }
+
+// Convenience global: flattens ThemeManager.colors into top-level properties
+// for use in main-window.slint and other files that reference Theme.xxx
+export global Theme {
+    // Backgrounds
+    out property <color> background: ThemeManager.colors.background;
+    out property <color> background-secondary: ThemeManager.colors.background-secondary;
+
+    // Surfaces
+    out property <color> surface: ThemeManager.colors.surface;
+    out property <color> surface-variant: ThemeManager.colors.surface-hover;
+    out property <color> surface-active: ThemeManager.colors.surface-active;
+
+    // Primary
+    out property <color> primary: ThemeManager.colors.primary;
+    out property <color> primary-hover: ThemeManager.colors.primary-hover;
+    out property <color> accent: ThemeManager.colors.accent;
+
+    // Text
+    out property <color> text-primary: ThemeManager.colors.foreground;
+    out property <color> text-secondary: ThemeManager.colors.foreground-muted;
+    out property <color> text-tertiary: ThemeManager.colors.foreground-subtle;
+    out property <color> text-on-primary: ThemeManager.colors.primary-foreground;
+
+    // Semantic
+    out property <color> success: ThemeManager.colors.success;
+    out property <color> error: ThemeManager.colors.error;
+    out property <color> warning: ThemeManager.colors.warning;
+    out property <color> info: ThemeManager.colors.info;
+
+    // Borders
+    out property <color> border: ThemeManager.colors.border;
+    out property <color> border-hover: ThemeManager.colors.border-hover;
+    out property <color> border-focus: ThemeManager.colors.border-focus;
+
+    // Effects
+    out property <color> glow: ThemeManager.colors.glow;
+    out property <color> overlay: ThemeManager.colors.overlay;
+}

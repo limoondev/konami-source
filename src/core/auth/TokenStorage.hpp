@@ -13,7 +13,7 @@
 #include <mutex>
 #include <unordered_map>
 
-namespace nexus::core::auth {
+namespace konami::core::auth {
 
 /**
  * TokenStorage - Secure credential storage
@@ -165,7 +165,7 @@ private:
     bool m_initialized{false};
     
     // Service name for keychain
-    static constexpr const char* SERVICE_NAME = "NexusLauncher";
+    static constexpr const char* SERVICE_NAME = "KonamiClient";
 };
 
-} // namespace nexus::core::auth
+} // namespace konami::core::auth

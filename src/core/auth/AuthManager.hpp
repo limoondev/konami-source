@@ -17,7 +17,7 @@
 #include <mutex>
 #include <functional>
 
-namespace nexus::core::auth {
+namespace konami::core::auth {
 
 /**
  * Account change callback
@@ -179,4 +179,4 @@ private:
     bool m_initialized{false};
 };
 
-} // namespace nexus::core::auth
+} // namespace konami::core::auth
