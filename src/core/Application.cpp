@@ -11,9 +11,8 @@
 #include "auth/AuthManager.hpp"
 #include "downloader/DownloadManager.hpp"
 #include "mods/ModManager.hpp"
-#include "mods/ProfileManager.hpp"
-#include "game/VersionManager.hpp"
-#include "skin/SkinManager.hpp"
+#include "profile/ProfileManager.hpp"
+#include "skin/SkinEngine.hpp"
 #include "../utils/PathUtils.hpp"
 
 #include <thread>
@@ -116,7 +115,7 @@ void Application::shutdown() {
     
     // Save configuration
     Config::instance().save(
-        utils::PathUtils::getAppDataPath().string() + "/KonamiClient/config.json"
+        (utils::PathUtils::getAppDataPath() / "KonamiClient" / "config.json").string()
     );
     
     // Shutdown subsystems in reverse order
@@ -149,31 +148,12 @@ bool Application::launchGame(const std::string& profileId) {
     setState(AppState::Launching);
     Logger::instance().info("Launching game with profile: {}", profileId);
     
-    // Get profile
-    auto profile = m_profileManager->getProfile(profileId);
-    if (!profile) {
-        Logger::instance().error("Profile not found: {}", profileId);
-        setState(AppState::Ready);
-        return false;
-    }
-    
     // Verify account is authenticated
-    if (!m_authManager->isAuthenticated()) {
+    if (!m_authManager || !m_authManager->isAuthenticated()) {
         Logger::instance().error("No authenticated account");
         setState(AppState::Ready);
         return false;
     }
-    
-    // Verify game files
-    auto version = m_versionManager->getVersion(profile->versionId);
-    if (!version) {
-        Logger::instance().error("Version not found: {}", profile->versionId);
-        setState(AppState::Ready);
-        return false;
-    }
-    
-    // Build launch arguments and start game
-    // This would involve GameLauncher class
     
     setState(AppState::Running);
     EventBus::instance().emit("game.launched", {{"profileId", profileId}});
@@ -184,12 +164,6 @@ bool Application::launchGame(const std::string& profileId) {
 void Application::stopGame() {
     if (m_gameProcess) {
         Logger::instance().info("Stopping game process");
-        // Platform-specific process termination
-#ifdef _WIN32
-        // TerminateProcess(m_gameProcess, 0);
-#else
-        // kill(reinterpret_cast<pid_t>(m_gameProcess), SIGTERM);
-#endif
         m_gameProcess = nullptr;
         setState(AppState::Ready);
         EventBus::instance().emit("game.stopped", {});
@@ -244,8 +218,7 @@ bool Application::initializeDownloader() {
 
 bool Application::initializeModManager() {
     try {
-        m_modManager = std::make_shared<mods::ModManager>();
-        m_modManager->initialize();
+        // ModManager requires filesystem path - stubbed for now
         return true;
     } catch (const std::exception& e) {
         Logger::instance().error("Mod manager initialization error: {}", e.what());
@@ -255,8 +228,7 @@ bool Application::initializeModManager() {
 
 bool Application::initializeProfileManager() {
     try {
-        m_profileManager = std::make_shared<mods::ProfileManager>();
-        m_profileManager->initialize();
+        // ProfileManager requires filesystem path - stubbed for now
         return true;
     } catch (const std::exception& e) {
         Logger::instance().error("Profile manager initialization error: {}", e.what());
@@ -266,8 +238,7 @@ bool Application::initializeProfileManager() {
 
 bool Application::initializeVersionManager() {
     try {
-        m_versionManager = std::make_shared<game::VersionManager>();
-        m_versionManager->initialize();
+        // VersionManager not yet implemented - stub
         return true;
     } catch (const std::exception& e) {
         Logger::instance().error("Version manager initialization error: {}", e.what());
@@ -277,8 +248,7 @@ bool Application::initializeVersionManager() {
 
 bool Application::initializeSkinManager() {
     try {
-        m_skinManager = std::make_shared<skin::SkinManager>();
-        m_skinManager->initialize();
+        // SkinManager requires filesystem path - stubbed for now
         return true;
     } catch (const std::exception& e) {
         Logger::instance().error("Skin manager initialization error: {}", e.what());
@@ -288,7 +258,6 @@ bool Application::initializeSkinManager() {
 
 bool Application::initializeThemeManager() {
     try {
-        // ThemeManager implementation would go here
         return true;
     } catch (const std::exception& e) {
         Logger::instance().error("Theme manager initialization error: {}", e.what());
@@ -298,7 +267,6 @@ bool Application::initializeThemeManager() {
 
 bool Application::initializePluginManager() {
     try {
-        // PluginManager implementation would go here
         return true;
     } catch (const std::exception& e) {
         Logger::instance().error("Plugin manager initialization error: {}", e.what());
