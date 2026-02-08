@@ -230,6 +230,15 @@ enum class DownloadStatus {
     Cancelled
 };
 
+NLOHMANN_JSON_SERIALIZE_ENUM(DownloadStatus, {
+    {DownloadStatus::Pending, "pending"},
+    {DownloadStatus::Downloading, "downloading"},
+    {DownloadStatus::Paused, "paused"},
+    {DownloadStatus::Completed, "completed"},
+    {DownloadStatus::Failed, "failed"},
+    {DownloadStatus::Cancelled, "cancelled"},
+})
+
 struct DownloadTask {
     std::string id;
     std::string url;
@@ -274,6 +283,13 @@ enum class VersionType {
     OldBeta,
     OldAlpha
 };
+
+NLOHMANN_JSON_SERIALIZE_ENUM(VersionType, {
+    {VersionType::Release, "release"},
+    {VersionType::Snapshot, "snapshot"},
+    {VersionType::OldBeta, "old_beta"},
+    {VersionType::OldAlpha, "old_alpha"},
+})
 
 struct GameVersion {
     std::string id;
