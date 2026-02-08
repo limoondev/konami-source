@@ -20,46 +20,45 @@ if(TARGET ZLIB::ZLIB OR TARGET zlib OR TARGET zlibstatic)
         endif()
     endif()
 
-    # FetchContent zlib is already available as an aliased target.
+    # Resolve the real (non-alias) zlib target for target_include_directories
+    # (CMake forbids calling target_include_directories on ALIAS targets).
+    set(_zlib_real_target "")
+    if(TARGET zlibstatic)
+        set(_zlib_real_target zlibstatic)
+    elseif(TARGET zlib)
+        # "zlib" is either the real shared-lib target or an alias.
+        get_target_property(_zlib_alias zlib ALIASED_TARGET)
+        if(_zlib_alias)
+            set(_zlib_real_target ${_zlib_alias})
+        else()
+            set(_zlib_real_target zlib)
+        endif()
+    endif()
+
     # Populate all the variables that FindZLIB would normally set so that
     # callers relying on either the target or the variables are satisfied.
     set(ZLIB_FOUND TRUE)
     set(ZLIB_VERSION_STRING "1.3.1")
 
     # zlib.h lives in the source tree, zconf.h is generated in the binary
-    # tree. Point ZLIB_INCLUDE_DIR at the source tree (required by
-    # find_package_handle_standard_args) and provide both in the DIRS list.
+    # tree. Provide both paths.
     set(ZLIB_INCLUDE_DIR  "${zlib_SOURCE_DIR}" CACHE PATH "zlib include directory (FetchContent)" FORCE)
     set(ZLIB_INCLUDE_DIRS "${zlib_SOURCE_DIR};${zlib_BINARY_DIR}")
 
-    # ZLIB_LIBRARY must be a file path for FindPackageHandleStandardArgs to
-    # accept it. Provide a well-known sentinel that passes the REQUIRED_VARS
-    # check, then make sure all consumers actually link via the IMPORTED target.
-    get_target_property(_zlib_loc ZLIB::ZLIB ALIASED_TARGET)
-    if(_zlib_loc)
-        # ALIAS -- resolve to real target's location if available
-        get_target_property(_zlib_file ${_zlib_loc} LOCATION)
-    else()
-        get_target_property(_zlib_file ZLIB::ZLIB LOCATION)
-    endif()
-    if(NOT _zlib_file OR _zlib_file MATCHES "NOTFOUND")
-        # During configure the library may not be built yet.
-        # Use the include dir as a stand-in so the REQUIRED_VARS check passes.
-        set(_zlib_file "${ZLIB_INCLUDE_DIR}")
-    endif()
-    set(ZLIB_LIBRARY  "${_zlib_file}" CACHE FILEPATH "zlib library (FetchContent)" FORCE)
+    # ZLIB_LIBRARY needs a non-empty value for find_package_handle_standard_args.
+    # The library isn't built yet at configure time, so use the source dir as a
+    # sentinel. Consumers must link via the ZLIB::ZLIB target, not this variable.
+    set(ZLIB_LIBRARY  "${zlib_SOURCE_DIR}/zlib.h" CACHE FILEPATH "zlib library (FetchContent)" FORCE)
     set(ZLIB_LIBRARIES ZLIB::ZLIB)
 
-    # Make sure libzip (and anything else) can find the headers via the
-    # target's interface include directories as well.
-    foreach(_dir "${zlib_SOURCE_DIR}" "${zlib_BINARY_DIR}")
-        if(TARGET zlib)
-            target_include_directories(zlib PUBLIC "${_dir}")
-        endif()
-        if(TARGET zlibstatic)
-            target_include_directories(zlibstatic PUBLIC "${_dir}")
-        endif()
-    endforeach()
+    # Propagate include directories on the real target so libzip (and anything
+    # else linking ZLIB::ZLIB) can find zlib.h and zconf.h.
+    if(_zlib_real_target)
+        target_include_directories(${_zlib_real_target} PUBLIC
+            "${zlib_SOURCE_DIR}"
+            "${zlib_BINARY_DIR}"
+        )
+    endif()
 
     include(FindPackageHandleStandardArgs)
     find_package_handle_standard_args(ZLIB
