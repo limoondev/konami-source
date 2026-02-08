@@ -297,8 +297,14 @@ FetchContent_Declare(
     GIT_SHALLOW    TRUE
 )
 set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(zlib)
+
+# Manually populate so we can use EXCLUDE_FROM_ALL (skips zlib install rules
+# that would otherwise conflict with libzip's export sets).
+FetchContent_GetProperties(zlib)
+if(NOT zlib_POPULATED)
+    FetchContent_Populate(zlib)
+    add_subdirectory(${zlib_SOURCE_DIR} ${zlib_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
 
 if(NOT TARGET ZLIB::ZLIB)
     if(TARGET zlib)
@@ -319,7 +325,11 @@ FetchContent_Declare(
 set(LZ4_BUILD_CLI OFF CACHE BOOL "" FORCE)
 set(LZ4_BUILD_LEGACY_LZ4C OFF CACHE BOOL "" FORCE)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW CACHE STRING "" FORCE)
-FetchContent_MakeAvailable(lz4)
+FetchContent_GetProperties(lz4)
+if(NOT lz4_POPULATED)
+    FetchContent_Populate(lz4)
+    add_subdirectory(${lz4_SOURCE_DIR}/build/cmake ${lz4_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
 
 # --- Compression: ZSTD ---
 FetchContent_Declare(
@@ -333,7 +343,11 @@ set(ZSTD_BUILD_PROGRAMS OFF CACHE BOOL "" FORCE)
 set(ZSTD_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(ZSTD_BUILD_SHARED OFF CACHE BOOL "" FORCE)
 set(ZSTD_BUILD_STATIC ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(zstd)
+FetchContent_GetProperties(zstd)
+if(NOT zstd_POPULATED)
+    FetchContent_Populate(zstd)
+    add_subdirectory(${zstd_SOURCE_DIR}/build/cmake ${zstd_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
 
 # --- OpenSSL ---
 find_package(OpenSSL REQUIRED)
@@ -360,7 +374,15 @@ set(ENABLE_GNUTLS OFF CACHE BOOL "" FORCE)
 set(ENABLE_MBEDTLS OFF CACHE BOOL "" FORCE)
 set(ENABLE_OPENSSL OFF CACHE BOOL "" FORCE)
 set(ENABLE_WINDOWS_CRYPTO OFF CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(libzip)
+
+# Manually populate with EXCLUDE_FROM_ALL so libzip's install(EXPORT) and
+# export() rules are skipped -- they fail because our FetchContent zlib
+# target is not in any export set.
+FetchContent_GetProperties(libzip)
+if(NOT libzip_POPULATED)
+    FetchContent_Populate(libzip)
+    add_subdirectory(${libzip_SOURCE_DIR} ${libzip_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
 
 # --- stb (header-only image library) ---
 FetchContent_Declare(

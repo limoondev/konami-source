@@ -35,7 +35,7 @@ void DownloadManager::initialize() {
     m_bandwidthLimit = config.get<size_t>("downloads.bandwidthLimit", 0);
     
     // Initialize cache
-    auto cachePath = utils::PathUtils::getAppDataPath() / "KonamiClient" / "cache";
+    auto cachePath = utils::PathUtils::getCachePath();
     m_cacheManager->initialize(cachePath.string());
     
     // Create thread pool

@@ -52,8 +52,8 @@ std::future<std::vector<VersionInfo>> MojangAPI::getVersionManifest() {
 std::future<std::optional<VersionInfo>> MojangAPI::getLatestRelease() {
     return std::async(std::launch::async, [this]() -> std::optional<VersionInfo> {
         if (m_cachedManifest.empty()) {
-            auto future = getVersionManifest();
-            future.get();
+            // Fetch synchronously to avoid nested std::async deadlock
+            getVersionManifest().get();
         }
 
         for (const auto& v : m_cachedManifest) {
@@ -68,8 +68,8 @@ std::future<std::optional<VersionInfo>> MojangAPI::getLatestRelease() {
 std::future<std::optional<VersionInfo>> MojangAPI::getLatestSnapshot() {
     return std::async(std::launch::async, [this]() -> std::optional<VersionInfo> {
         if (m_cachedManifest.empty()) {
-            auto future = getVersionManifest();
-            future.get();
+            // Fetch synchronously to avoid nested std::async deadlock
+            getVersionManifest().get();
         }
 
         for (const auto& v : m_cachedManifest) {
