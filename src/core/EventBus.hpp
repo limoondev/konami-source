@@ -9,6 +9,7 @@
 
 #include <nlohmann/json.hpp>
 #include <functional>
+#include <future>
 #include <unordered_map>
 #include <vector>
 #include <mutex>
@@ -135,11 +136,15 @@ public:
      * Emit an event asynchronously
      * @param event Event name
      * @param data Event data
+     * 
+     * Note: The returned future must stay in scope or be stored to ensure
+     * the async task completes. If you don't need the result, store it
+     * in a member variable or call .get() when appropriate.
      */
-    void emitAsync(const std::string& event, const json& data = json::object()) {
-        std::thread([this, event, data]() {
+    [[nodiscard]] std::future<void> emitAsync(const std::string& event, const json& data = json::object()) {
+        return std::async(std::launch::async, [this, event, data]() {
             emit(event, data);
-        }).detach();
+        });
     }
     
     /**

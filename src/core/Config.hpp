@@ -222,9 +222,21 @@ public:
         
         try {
             json::json_pointer ptr = toJsonPointer(key);
-            m_config.erase(ptr.back());
+            if (!m_config.contains(ptr)) {
+                return;
+            }
+            
+            // Navigate to parent and erase the leaf key
+            json::json_pointer parent = ptr.parent_pointer();
+            std::string leafKey = ptr.back();
+            
+            if (parent.empty()) {
+                m_config.erase(leafKey);
+            } else if (m_config.contains(parent)) {
+                m_config.at(parent).erase(leafKey);
+            }
         } catch (const json::exception&) {
-            // Key doesn't exist
+            // Key doesn't exist or invalid path
         }
     }
     

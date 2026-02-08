@@ -283,15 +283,17 @@ bool TokenStorage::removeFromKeychain(const std::string& key) {
 }
 
 bool TokenStorage::storeInFile(const std::string& key, const std::string& token) {
-    m_tokens[key] = encrypt(token);
+    // Store plaintext in memory; saveToFile() handles encryption of the whole storage
+    m_tokens[key] = token;
     saveToFile();
     return true;
 }
 
 std::optional<std::string> TokenStorage::getFromFile(const std::string& key) const {
+    // Tokens are stored as plaintext in memory; loadFromFile() handles decryption
     auto it = m_tokens.find(key);
     if (it != m_tokens.end()) {
-        return decrypt(it->second);
+        return it->second;
     }
     return std::nullopt;
 }
@@ -325,7 +327,8 @@ void TokenStorage::loadFromFile() {
         }
         
         auto jsonData = json::parse(*decrypted);
-        for (auto& [key, value] : jsonData.items()) {
+        for (const auto& [key, value] : jsonData.items()) {
+            // Tokens are stored as plaintext inside the encrypted file
             m_tokens[key] = value.get<std::string>();
         }
         
