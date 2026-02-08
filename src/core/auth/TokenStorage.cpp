@@ -184,26 +184,25 @@ bool TokenStorage::storeInKeychain(const std::string& key, const std::string& to
     CFStringRef account = CFStringCreateWithCString(nullptr, key.c_str(), kCFStringEncodingUTF8);
     CFDataRef password = CFDataCreate(nullptr, 
         reinterpret_cast<const UInt8*>(token.data()), 
-        token.size());
+        static_cast<CFIndex>(token.size()));
     
     // Delete existing item first
-    NSDictionary* query = @{
-        (__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
-        (__bridge id)kSecAttrService: (__bridge id)service,
-        (__bridge id)kSecAttrAccount: (__bridge id)account
-    };
-    SecItemDelete((__bridge CFDictionaryRef)query);
+    const void* delKeys[] = { kSecClass, kSecAttrService, kSecAttrAccount };
+    const void* delVals[] = { kSecClassGenericPassword, service, account };
+    CFDictionaryRef delQuery = CFDictionaryCreate(nullptr, delKeys, delVals, 3,
+        &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+    SecItemDelete(delQuery);
+    CFRelease(delQuery);
     
     // Add new item
-    NSDictionary* attributes = @{
-        (__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
-        (__bridge id)kSecAttrService: (__bridge id)service,
-        (__bridge id)kSecAttrAccount: (__bridge id)account,
-        (__bridge id)kSecValueData: (__bridge id)password
-    };
+    const void* addKeys[] = { kSecClass, kSecAttrService, kSecAttrAccount, kSecValueData };
+    const void* addVals[] = { kSecClassGenericPassword, service, account, password };
+    CFDictionaryRef addAttrs = CFDictionaryCreate(nullptr, addKeys, addVals, 4,
+        &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
     
-    OSStatus status = SecItemAdd((__bridge CFDictionaryRef)attributes, nullptr);
+    OSStatus status = SecItemAdd(addAttrs, nullptr);
     
+    CFRelease(addAttrs);
     CFRelease(service);
     CFRelease(account);
     CFRelease(password);
@@ -232,22 +231,21 @@ std::optional<std::string> TokenStorage::getFromKeychain(const std::string& key)
     CFStringRef service = CFStringCreateWithCString(nullptr, SERVICE_NAME, kCFStringEncodingUTF8);
     CFStringRef account = CFStringCreateWithCString(nullptr, key.c_str(), kCFStringEncodingUTF8);
     
-    NSDictionary* query = @{
-        (__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
-        (__bridge id)kSecAttrService: (__bridge id)service,
-        (__bridge id)kSecAttrAccount: (__bridge id)account,
-        (__bridge id)kSecReturnData: @YES
-    };
+    const void* queryKeys[] = { kSecClass, kSecAttrService, kSecAttrAccount, kSecReturnData };
+    const void* queryVals[] = { kSecClassGenericPassword, service, account, kCFBooleanTrue };
+    CFDictionaryRef query = CFDictionaryCreate(nullptr, queryKeys, queryVals, 4,
+        &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
     
     CFDataRef data = nullptr;
-    OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)query, (CFTypeRef*)&data);
+    OSStatus status = SecItemCopyMatching(query, reinterpret_cast<CFTypeRef*>(&data));
     
+    CFRelease(query);
     CFRelease(service);
     CFRelease(account);
     
     if (status == errSecSuccess && data) {
         std::string token(reinterpret_cast<const char*>(CFDataGetBytePtr(data)),
-                         CFDataGetLength(data));
+                         static_cast<size_t>(CFDataGetLength(data)));
         CFRelease(data);
         return token;
     }
@@ -267,14 +265,14 @@ bool TokenStorage::removeFromKeychain(const std::string& key) {
     CFStringRef service = CFStringCreateWithCString(nullptr, SERVICE_NAME, kCFStringEncodingUTF8);
     CFStringRef account = CFStringCreateWithCString(nullptr, key.c_str(), kCFStringEncodingUTF8);
     
-    NSDictionary* query = @{
-        (__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
-        (__bridge id)kSecAttrService: (__bridge id)service,
-        (__bridge id)kSecAttrAccount: (__bridge id)account
-    };
+    const void* queryKeys[] = { kSecClass, kSecAttrService, kSecAttrAccount };
+    const void* queryVals[] = { kSecClassGenericPassword, service, account };
+    CFDictionaryRef query = CFDictionaryCreate(nullptr, queryKeys, queryVals, 3,
+        &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
     
-    OSStatus status = SecItemDelete((__bridge CFDictionaryRef)query);
+    OSStatus status = SecItemDelete(query);
     
+    CFRelease(query);
     CFRelease(service);
     CFRelease(account);
     

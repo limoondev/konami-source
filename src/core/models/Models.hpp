@@ -22,6 +22,11 @@ enum class AccountType {
     Offline
 };
 
+NLOHMANN_JSON_SERIALIZE_ENUM(AccountType, {
+    {AccountType::Microsoft, "microsoft"},
+    {AccountType::Offline, "offline"},
+})
+
 struct Account {
     std::string id;
     std::string username;
@@ -67,6 +72,14 @@ enum class LoaderType {
     NeoForge
 };
 
+NLOHMANN_JSON_SERIALIZE_ENUM(LoaderType, {
+    {LoaderType::Vanilla, "vanilla"},
+    {LoaderType::Fabric, "fabric"},
+    {LoaderType::Forge, "forge"},
+    {LoaderType::Quilt, "quilt"},
+    {LoaderType::NeoForge, "neoforge"},
+})
+
 struct Profile {
     std::string id;
     std::string name;
@@ -111,6 +124,12 @@ enum class ModSource {
     CurseForge,
     Local
 };
+
+NLOHMANN_JSON_SERIALIZE_ENUM(ModSource, {
+    {ModSource::Modrinth, "modrinth"},
+    {ModSource::CurseForge, "curseforge"},
+    {ModSource::Local, "local"},
+})
 
 struct ModVersion {
     std::string id;
@@ -167,6 +186,11 @@ enum class SkinModel {
     Classic,  // Steve
     Slim      // Alex
 };
+
+NLOHMANN_JSON_SERIALIZE_ENUM(SkinModel, {
+    {SkinModel::Classic, "classic"},
+    {SkinModel::Slim, "slim"},
+})
 
 struct Skin {
     std::string id;

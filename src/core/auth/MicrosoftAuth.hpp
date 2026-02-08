@@ -12,6 +12,7 @@
 #include <optional>
 #include <chrono>
 #include <future>
+#include <atomic>
 
 namespace konami::core::auth {
 
