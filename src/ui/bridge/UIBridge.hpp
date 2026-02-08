@@ -10,15 +10,13 @@
 #include <vector>
 
 // Forward declarations
-namespace konami {
-    class Application;
-    class AuthManager;
-    class ProfileManager;
-    class ModManager;
-    class DownloadManager;
-    class GameLauncher;
-    class SkinEngine;
-}
+namespace konami::core { class Application; }
+namespace konami::core::auth { class AuthManager; }
+namespace konami::profile { class ProfileManager; }
+namespace konami::mods { class ModManager; }
+namespace konami::core::downloader { class DownloadManager; }
+namespace konami::launcher { class GameLauncher; }
+namespace konami::skin { class SkinManager; }
 
 // Include generated Slint header
 #include "main-window.h"
@@ -34,7 +32,7 @@ namespace konami::ui {
  */
 class UIBridge {
 public:
-    UIBridge(Application& app);
+    UIBridge(core::Application& app);
     ~UIBridge();
     
     // Initialize and run the UI
@@ -82,7 +80,7 @@ private:
     NewsItem toSlintNews(const struct NewsEntry& news);
     
     // Members
-    Application& m_app;
+    core::Application& m_app;
     slint::ComponentHandle<MainWindow> m_window;
     bool m_initialized{false};
 };

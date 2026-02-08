@@ -184,7 +184,7 @@ bool ProfileManager::initialize(const std::filesystem::path& profilesDirectory) 
     
     loadProfiles();
     
-    core::Logger::info("ProfileManager", "Initialized with {} profiles", m_impl->profiles.size());
+    core::Logger::instance().info( "Initialized with {} profiles", m_impl->profiles.size());
     return true;
 }
 
@@ -217,7 +217,7 @@ Profile ProfileManager::createProfile(const std::string& name, const std::string
         m_impl->onProfileCreated(profile);
     }
     
-    core::Logger::info("ProfileManager", "Created profile: {} ({})", name, profile.id);
+    core::Logger::instance().info( "Created profile: {} ({})", name, profile.id);
     return profile;
 }
 
@@ -264,7 +264,7 @@ bool ProfileManager::deleteProfile(const std::string& profileId) {
             m_impl->onProfileDeleted(profileId);
         }
         
-        core::Logger::info("ProfileManager", "Deleted profile: {}", profileId);
+        core::Logger::instance().info( "Deleted profile: {}", profileId);
         return true;
     }
     
@@ -445,7 +445,7 @@ ProfileSnapshot ProfileManager::createSnapshot(const std::string& profileId,
         }
     }
     
-    core::Logger::info("ProfileManager", "Created snapshot: {} for profile {}", name, profileId);
+    core::Logger::instance().info( "Created snapshot: {} for profile {}", name, profileId);
     return snapshot;
 }
 
@@ -467,7 +467,7 @@ bool ProfileManager::restoreSnapshot(const std::string& profileId, const std::st
     std::filesystem::copy(it->dataPath, profile->gameDirectory,
         std::filesystem::copy_options::recursive, ec);
     
-    core::Logger::info("ProfileManager", "Restored snapshot: {} for profile {}", it->name, profileId);
+    core::Logger::instance().info( "Restored snapshot: {} for profile {}", it->name, profileId);
     return !ec;
 }
 
@@ -546,7 +546,7 @@ std::vector<JavaConfig> ProfileManager::detectInstalledJava() {
         }
     }
     
-    core::Logger::info("ProfileManager", "Detected {} Java installations", javaInstalls.size());
+    core::Logger::instance().info( "Detected {} Java installations", javaInstalls.size());
     return javaInstalls;
 }
 
@@ -635,7 +635,7 @@ void ProfileManager::loadProfiles() {
             }
         }
     } catch (const std::exception& e) {
-        core::Logger::error("ProfileManager", "Failed to load profiles: {}", e.what());
+        core::Logger::instance().error( "Failed to load profiles: {}", e.what());
     }
 }
 

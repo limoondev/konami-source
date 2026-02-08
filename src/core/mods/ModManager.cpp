@@ -261,7 +261,7 @@ bool ModManager::initialize(const std::filesystem::path& modsDirectory) {
         std::filesystem::create_directories(m_impl->cacheDirectory);
     }
     
-    core::Logger::info("ModManager", "Initialized with directory: {}", modsDirectory.string());
+    core::Logger::instance().info("Initialized ModManager with directory: {}", modsDirectory.string());
     return refreshModList();
 }
 
@@ -327,7 +327,7 @@ bool ModManager::refreshModList() {
     m_impl->installedMods = scanInstalledMods();
     m_impl->detectedConflicts = detectConflicts();
     
-    core::Logger::info("ModManager", "Found {} installed mods", m_impl->installedMods.size());
+    core::Logger::instance().info("Found {} installed mods", m_impl->installedMods.size());
     return true;
 }
 
@@ -344,10 +344,10 @@ bool ModManager::enableMod(const std::string& modId) {
                 std::filesystem::rename(currentPath, newPath);
                 mod.filePath = newPath.string();
                 mod.enabled = true;
-                core::Logger::info("ModManager", "Enabled mod: {}", mod.name);
+                core::Logger::instance().info("Enabled mod: {}", mod.name);
                 return true;
             } catch (const std::exception& e) {
-                core::Logger::error("ModManager", "Failed to enable mod {}: {}", modId, e.what());
+                core::Logger::instance().error("Failed to enable mod {}: {}", modId, e.what());
                 return false;
             }
         }
@@ -369,10 +369,10 @@ bool ModManager::disableMod(const std::string& modId) {
                 std::filesystem::rename(currentPath, newPath);
                 mod.filePath = newPath.string();
                 mod.enabled = false;
-                core::Logger::info("ModManager", "Disabled mod: {}", mod.name);
+                core::Logger::instance().info("Disabled mod: {}", mod.name);
                 return true;
             } catch (const std::exception& e) {
-                core::Logger::error("ModManager", "Failed to disable mod {}: {}", modId, e.what());
+                core::Logger::instance().error("Failed to disable mod {}: {}", modId, e.what());
                 return false;
             }
         }
@@ -396,10 +396,10 @@ bool ModManager::deleteMod(const std::string& modId) {
             }
             
             m_impl->installedMods.erase(it);
-            core::Logger::info("ModManager", "Deleted mod: {}", modId);
+            core::Logger::instance().info("Deleted mod: {}", modId);
             return true;
         } catch (const std::exception& e) {
-            core::Logger::error("ModManager", "Failed to delete mod {}: {}", modId, e.what());
+            core::Logger::instance().error("Failed to delete mod {}: {}", modId, e.what());
             return false;
         }
     }
@@ -410,7 +410,7 @@ bool ModManager::deleteMod(const std::string& modId) {
 std::future<bool> ModManager::installMod(const ModInfo& mod, DownloadProgressCallback progressCallback) {
     return std::async(std::launch::async, [this, mod, progressCallback]() {
         // Implementation would download from source
-        core::Logger::info("ModManager", "Installing mod: {}", mod.name);
+        core::Logger::instance().info("Installing mod: {}", mod.name);
         
         // Simulate installation
         if (progressCallback) {

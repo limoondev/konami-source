@@ -12,7 +12,9 @@
 
 namespace konami::ui {
 
-UIBridge::UIBridge(Application& app)
+using core::Logger;
+
+UIBridge::UIBridge(core::Application& app)
     : m_app(app)
 {
 }
@@ -43,18 +45,18 @@ bool UIBridge::initialize() {
         updateSettings();
         
         m_initialized = true;
-        Logger::info("UIBridge", "UI initialized successfully");
+        Logger::instance().info( "UI initialized successfully");
         return true;
     }
     catch (const std::exception& e) {
-        Logger::error("UIBridge", "Failed to initialize UI: " + std::string(e.what()));
+        Logger::instance().error( "Failed to initialize UI: " + std::string(e.what()));
         return false;
     }
 }
 
 void UIBridge::run() {
     if (!m_initialized) {
-        Logger::error("UIBridge", "Cannot run: UI not initialized");
+        Logger::instance().error( "Cannot run: UI not initialized");
         return;
     }
     
@@ -64,14 +66,14 @@ void UIBridge::run() {
 void UIBridge::setupNavigationCallbacks() {
     m_window->on_navigate([this](slint::SharedString page) {
         std::string pageStr = std::string(page);
-        Logger::debug("UIBridge", "Navigating to: " + pageStr);
+        Logger::instance().debug( "Navigating to: " + pageStr);
         m_window->set_current_page(page);
     });
 }
 
 void UIBridge::setupAuthCallbacks() {
     m_window->on_login([this]() {
-        Logger::info("UIBridge", "Login requested");
+        Logger::instance().info( "Login requested");
         
         // Start Microsoft OAuth flow
         m_app.authManager().startMicrosoftAuth([this](bool success, const std::string& error) {
@@ -85,7 +87,7 @@ void UIBridge::setupAuthCallbacks() {
     });
     
     m_window->on_logout([this]() {
-        Logger::info("UIBridge", "Logout requested");
+        Logger::instance().info( "Logout requested");
         m_app.authManager().logout();
         updateAccountInfo();
     });
@@ -118,7 +120,7 @@ void UIBridge::setupSettingsCallbacks() {
 
 void UIBridge::setupLaunchCallbacks() {
     m_window->on_launch_game([this]() {
-        Logger::info("UIBridge", "Game launch requested");
+        Logger::instance().info( "Game launch requested");
         
         // Check if logged in
         if (!m_app.authManager().isLoggedIn()) {
@@ -160,7 +162,7 @@ void UIBridge::setupLaunchCallbacks() {
     });
     
     m_window->on_stop_game([this]() {
-        Logger::info("UIBridge", "Game stop requested");
+        Logger::instance().info( "Game stop requested");
         m_app.gameLauncher().stop();
         updateGameStatus(false, "");
     });
@@ -392,18 +394,18 @@ void UIBridge::updateSettings() {
 
 void UIBridge::showError(const std::string& title, const std::string& message) {
     // Would show error dialog
-    Logger::error("UIBridge", title + ": " + message);
+    Logger::instance().error( title + ": " + message);
 }
 
 void UIBridge::showInfo(const std::string& title, const std::string& message) {
     // Would show info dialog
-    Logger::info("UIBridge", title + ": " + message);
+    Logger::instance().info( title + ": " + message);
 }
 
 void UIBridge::showConfirm(const std::string& title, const std::string& message,
                            std::function<void(bool)> callback) {
     // Would show confirmation dialog
-    Logger::info("UIBridge", "Confirm: " + title + ": " + message);
+    Logger::instance().info( "Confirm: " + title + ": " + message);
     // For now, auto-confirm
     callback(true);
 }

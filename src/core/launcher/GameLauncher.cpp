@@ -209,7 +209,7 @@ bool GameLauncher::initialize(const std::filesystem::path& gameDirectory) {
         }
     }
     
-    core::Logger::info("GameLauncher", "Initialized with {} installed versions", 
+    core::Logger::instance().info("Initialized GameLauncher with {} installed versions", 
         m_impl->installedVersions.size());
     return true;
 }
@@ -228,7 +228,7 @@ std::future<VersionManifest> GameLauncher::fetchVersionManifest() {
         const std::string manifestUrl = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
         
         // Placeholder - would use CURL/cpr for actual HTTP request
-        core::Logger::info("GameLauncher", "Fetching version manifest from Mojang");
+        core::Logger::instance().info("Fetching version manifest from Mojang");
         
         m_impl->versionManifest = manifest;
         return manifest;
@@ -251,7 +251,7 @@ bool GameLauncher::isVersionInstalled(const std::string& version) const {
 
 std::future<bool> GameLauncher::launch(const LaunchOptions& options, ProgressCallback progressCallback) {
     return std::async(std::launch::async, [this, options, progressCallback]() {
-        core::Logger::info("GameLauncher", "Launching profile: {}", options.profileId);
+        core::Logger::instance().info("Launching profile: {}", options.profileId);
         
         m_impl->setState(LaunchState::Preparing);
         
@@ -270,7 +270,7 @@ std::future<bool> GameLauncher::launch(const LaunchOptions& options, ProgressCal
         
         auto versionJson = m_impl->loadVersionJson(profile.gameVersion);
         if (versionJson.is_null()) {
-            core::Logger::error("GameLauncher", "Version JSON not found for: {}", profile.gameVersion);
+            core::Logger::instance().error("Version JSON not found for: {}", profile.gameVersion);
             return false;
         }
         
@@ -332,7 +332,7 @@ std::future<bool> GameLauncher::launch(const LaunchOptions& options, ProgressCal
             progressCallback(progress);
         }
         
-        core::Logger::info("GameLauncher", "Starting game process");
+        core::Logger::instance().info("Starting game process");
         
 #ifdef _WIN32
         // Windows process creation

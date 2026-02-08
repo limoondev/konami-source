@@ -339,6 +339,21 @@ FetchContent_MakeAvailable(zstd)
 find_package(OpenSSL REQUIRED)
 message(STATUS "OpenSSL: ${OPENSSL_VERSION}")
 
+# --- libzip ---
+message(STATUS "Fetching libzip...")
+FetchContent_Declare(
+    libzip
+    GIT_REPOSITORY https://github.com/nih-at/libzip.git
+    GIT_TAG        v1.10.1
+    GIT_SHALLOW    TRUE
+)
+set(BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+set(BUILD_REGRESS OFF CACHE BOOL "" FORCE)
+set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BUILD_DOC OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(libzip)
+
 # --- stb (header-only image library) ---
 FetchContent_Declare(
     stb
@@ -444,11 +459,19 @@ set(KONAMI_SOURCES
     src/core/auth/Encryption.cpp
     src/core/auth/MicrosoftAuth.cpp
     src/core/auth/TokenStorage.cpp
+    src/core/downloader/CacheManager.cpp
     src/core/downloader/DownloadManager.cpp
+    src/core/downloader/MojangAPI.cpp
     src/core/launcher/GameLauncher.cpp
     src/core/mods/ModManager.cpp
     src/core/profile/ProfileManager.cpp
+    src/core/skin/SkinEngine.cpp
     src/ui/bridge/UIBridge.cpp
+    src/utils/FileUtils.cpp
+    src/utils/HttpClient.cpp
+    src/utils/JsonUtils.cpp
+    src/utils/PlatformUtils.cpp
+    src/utils/StringUtils.cpp
 )
 
 # ============================================================================
@@ -527,6 +550,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     asio_headers
     ZLIB::ZLIB
     libzstd_static
+    zip
     OpenSSL::SSL
     OpenSSL::Crypto
     stb_headers

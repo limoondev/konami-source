@@ -9,8 +9,9 @@
 
 #include <openssl/evp.h>
 #include <openssl/rand.h>
-#include <openssl/sha.h>
 #include <openssl/err.h>
+#include <openssl/bio.h>
+#include <openssl/buffer.h>
 
 #include <stdexcept>
 #include <cstring>
@@ -189,14 +190,21 @@ std::string Encryption::generateSalt(size_t length) {
 }
 
 std::string Encryption::sha256(const std::string& data) {
-    std::vector<uint8_t> hash(SHA256_DIGEST_LENGTH);
+    unsigned char hash[EVP_MAX_MD_SIZE];
+    unsigned int hashLen = 0;
     
-    SHA256_CTX ctx;
-    SHA256_Init(&ctx);
-    SHA256_Update(&ctx, data.data(), data.size());
-    SHA256_Final(hash.data(), &ctx);
+    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+    if (!ctx) return "";
     
-    return std::string(reinterpret_cast<char*>(hash.data()), hash.size());
+    if (EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr) != 1 ||
+        EVP_DigestUpdate(ctx, data.data(), data.size()) != 1 ||
+        EVP_DigestFinal_ex(ctx, hash, &hashLen) != 1) {
+        EVP_MD_CTX_free(ctx);
+        return "";
+    }
+    
+    EVP_MD_CTX_free(ctx);
+    return std::string(reinterpret_cast<char*>(hash), hashLen);
 }
 
 std::string Encryption::sha256Hex(const std::string& data) {

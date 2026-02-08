@@ -14,15 +14,17 @@
 #include <vector>
 #include <mutex>
 
+// Forward declarations in correct namespaces
+namespace konami::core::auth { class AuthManager; }
+namespace konami::core::downloader { class DownloadManager; }
+namespace konami::mods { class ModManager; }
+namespace konami::profile { class ProfileManager; }
+namespace konami::skin { class SkinManager; }
+
 namespace konami::core {
 
-// Forward declarations
-class AuthManager;
-class DownloadManager;
-class ModManager;
-class ProfileManager;
+// Forward declarations for unimplemented managers
 class VersionManager;
-class SkinManager;
 class ThemeManager;
 class PluginManager;
 
@@ -90,25 +92,25 @@ public:
      * Get auth manager instance
      * @return Shared pointer to AuthManager
      */
-    std::shared_ptr<AuthManager> getAuthManager() const { return m_authManager; }
+    std::shared_ptr<auth::AuthManager> getAuthManager() const { return m_authManager; }
     
     /**
      * Get download manager instance
      * @return Shared pointer to DownloadManager
      */
-    std::shared_ptr<DownloadManager> getDownloadManager() const { return m_downloadManager; }
+    std::shared_ptr<downloader::DownloadManager> getDownloadManager() const { return m_downloadManager; }
     
     /**
      * Get mod manager instance
      * @return Shared pointer to ModManager
      */
-    std::shared_ptr<ModManager> getModManager() const { return m_modManager; }
+    std::shared_ptr<::konami::mods::ModManager> getModManager() const { return m_modManager; }
     
     /**
      * Get profile manager instance
      * @return Shared pointer to ProfileManager
      */
-    std::shared_ptr<ProfileManager> getProfileManager() const { return m_profileManager; }
+    std::shared_ptr<::konami::profile::ProfileManager> getProfileManager() const { return m_profileManager; }
     
     /**
      * Get version manager instance
@@ -120,7 +122,7 @@ public:
      * Get skin manager instance
      * @return Shared pointer to SkinManager
      */
-    std::shared_ptr<SkinManager> getSkinManager() const { return m_skinManager; }
+    std::shared_ptr<::konami::skin::SkinManager> getSkinManager() const { return m_skinManager; }
     
     /**
      * Get theme manager instance
@@ -228,12 +230,12 @@ private:
     std::mutex m_callbackMutex;
     
     // Subsystem managers
-    std::shared_ptr<AuthManager> m_authManager;
-    std::shared_ptr<DownloadManager> m_downloadManager;
-    std::shared_ptr<ModManager> m_modManager;
-    std::shared_ptr<ProfileManager> m_profileManager;
+    std::shared_ptr<auth::AuthManager> m_authManager;
+    std::shared_ptr<downloader::DownloadManager> m_downloadManager;
+    std::shared_ptr<::konami::mods::ModManager> m_modManager;
+    std::shared_ptr<::konami::profile::ProfileManager> m_profileManager;
     std::shared_ptr<VersionManager> m_versionManager;
-    std::shared_ptr<SkinManager> m_skinManager;
+    std::shared_ptr<::konami::skin::SkinManager> m_skinManager;
     std::shared_ptr<ThemeManager> m_themeManager;
     std::shared_ptr<PluginManager> m_pluginManager;
     
