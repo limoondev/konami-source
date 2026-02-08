@@ -18,6 +18,7 @@
 #include <shlobj.h>
 #else
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/file.h>
 #endif
 

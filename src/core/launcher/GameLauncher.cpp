@@ -686,7 +686,7 @@ bool GameLauncher::extractNatives(const std::string& version) {
     for (const auto& lib : libraries) {
         if (lib.native) {
             // Extract native library - would use libzip
-            core::Logger::debug("GameLauncher", "Extracting native: {}", lib.name);
+            core::Logger::instance().debug("Extracting native: {}", lib.name);
         }
     }
     
