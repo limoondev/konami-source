@@ -306,11 +306,36 @@ if(NOT zlib_POPULATED)
     add_subdirectory(${zlib_SOURCE_DIR} ${zlib_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
+# Create ZLIB::ZLIB as an IMPORTED INTERFACE target instead of an ALIAS.
+# zlib v1.3.1 creates "zlibstatic" as an ALIAS of "zlib", and CMake forbids
+# aliasing an alias.  An IMPORTED INTERFACE avoids that restriction entirely.
 if(NOT TARGET ZLIB::ZLIB)
-    if(TARGET zlib)
-        add_library(ZLIB::ZLIB ALIAS zlib)
-    elseif(TARGET zlibstatic)
-        add_library(ZLIB::ZLIB ALIAS zlibstatic)
+    # Resolve the real (non-alias) target name
+    set(_zlib_real "")
+    foreach(_candidate zlib zlibstatic)
+        if(TARGET ${_candidate})
+            get_target_property(_alias ${_candidate} ALIASED_TARGET)
+            if(_alias)
+                set(_zlib_real ${_alias})
+            else()
+                set(_zlib_real ${_candidate})
+            endif()
+            break()
+        endif()
+    endforeach()
+
+    if(_zlib_real)
+        # Add include dirs to the real target so they propagate transitively
+        target_include_directories(${_zlib_real} PUBLIC
+            "${zlib_SOURCE_DIR}"
+            "${zlib_BINARY_DIR}"
+        )
+
+        add_library(ZLIB::ZLIB INTERFACE IMPORTED)
+        set_target_properties(ZLIB::ZLIB PROPERTIES
+            INTERFACE_LINK_LIBRARIES "${_zlib_real}"
+            INTERFACE_INCLUDE_DIRECTORIES "${zlib_SOURCE_DIR};${zlib_BINARY_DIR}"
+        )
     endif()
 endif()
 
