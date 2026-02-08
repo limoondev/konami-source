@@ -230,9 +230,12 @@ private:
                 }
                 --m_activeJobs;
                 
-                // Notify idle condition
-                if (m_tasks.empty() && m_priorityTasks.empty() && m_activeJobs == 0) {
-                    m_idleCondition.notify_all();
+                // Check idle state under the lock to avoid race conditions
+                {
+                    std::lock_guard<std::mutex> lock(m_queueMutex);
+                    if (m_tasks.empty() && m_priorityTasks.empty() && m_activeJobs == 0) {
+                        m_idleCondition.notify_all();
+                    }
                 }
             }
         }

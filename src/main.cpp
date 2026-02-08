@@ -13,13 +13,13 @@
 #include <memory>
 #include <iostream>
 #include <csignal>
-#include <cstdlib>
 #include <filesystem>
 
 #include "core/Application.hpp"
 #include "core/Logger.hpp"
 #include "core/Config.hpp"
 #include "core/EventBus.hpp"
+#include "utils/PathUtils.hpp"
 
 namespace fs = std::filesystem;
 
@@ -54,22 +54,10 @@ bool initializeDirectories() {
     auto& logger = konami::core::Logger::instance();
     
     try {
-        // Get base paths (platform-specific app data path)
-        fs::path appDataPath;
-#ifdef _WIN32
-        const char* appData = std::getenv("APPDATA");
-        appDataPath = appData ? fs::path(appData) : fs::current_path();
-#elif defined(__APPLE__)
-        const char* home = std::getenv("HOME");
-        appDataPath = home ? fs::path(home) / "Library" / "Application Support" : fs::current_path();
-#else
-        const char* home = std::getenv("HOME");
-        appDataPath = home ? fs::path(home) / ".local" / "share" : fs::current_path();
-#endif
-        fs::path launcherPath = appDataPath / "KonamiClient";
+        fs::path launcherPath = konami::utils::PathUtils::getAppDataPath() / "KonamiClient";
         
         // Create directory structure
-        std::vector<fs::path> directories = {
+        const std::vector<fs::path> directories = {
             launcherPath,
             launcherPath / "instances",
             launcherPath / "mods",
@@ -107,19 +95,7 @@ bool loadConfiguration() {
     auto& config = konami::core::Config::instance();
     
     try {
-        // Determine config path (same logic as directories)
-        fs::path appDataPath;
-#ifdef _WIN32
-        const char* appData = std::getenv("APPDATA");
-        appDataPath = appData ? fs::path(appData) : fs::current_path();
-#elif defined(__APPLE__)
-        const char* home = std::getenv("HOME");
-        appDataPath = home ? fs::path(home) / "Library" / "Application Support" : fs::current_path();
-#else
-        const char* home = std::getenv("HOME");
-        appDataPath = home ? fs::path(home) / ".local" / "share" : fs::current_path();
-#endif
-        fs::path configPath = appDataPath / "KonamiClient" / "config.json";
+        fs::path configPath = konami::utils::PathUtils::getConfigPath();
         
         if (fs::exists(configPath)) {
             config.load(configPath.string());

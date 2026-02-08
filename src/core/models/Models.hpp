@@ -42,8 +42,8 @@ struct Account {
         return std::chrono::system_clock::now() >= expiresAt;
     }
     
-    // JSON serialization
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Account, id, username, uuid, avatarUrl)
+    // JSON serialization (tokens excluded intentionally - handled by TokenStorage)
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Account, id, username, uuid, avatarUrl, type, isActive)
 };
 
 struct XboxToken {
@@ -109,7 +109,8 @@ struct Profile {
     std::vector<std::string> enabledMods;
     
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(Profile, id, name, gameVersion, loader, 
-                                    loaderVersion, icon, isFavorite, createdAt,
+                                    loaderVersion, icon, lastPlayed, totalPlaytime,
+                                    modCount, isFavorite, createdAt,
                                     javaPath, minMemory, maxMemory, jvmArgs,
                                     windowWidth, windowHeight, fullscreen,
                                     gameDirectory, enabledMods)
@@ -169,7 +170,8 @@ struct Mod {
     
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(Mod, id, slug, name, author, description,
                                     version, gameVersion, downloads, iconUrl,
-                                    isInstalled, isEnabled, source, category)
+                                    isInstalled, isEnabled, hasUpdate, source,
+                                    category)
 };
 
 struct ModDependency {
@@ -400,7 +402,9 @@ struct LauncherSettings {
                                     themeName, accentColor, useBlurEffects,
                                     animationSpeed, javaPath, minMemory, maxMemory,
                                     jvmArgs, concurrentDownloads, useCache,
-                                    gameDirectory, keepLauncherOpen, showConsole)
+                                    enableHardwareAcceleration,
+                                    gameDirectory, keepLauncherOpen, showConsole,
+                                    developerMode)
 };
 
 //=============================================================================

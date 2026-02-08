@@ -23,24 +23,28 @@ public:
 #endif
     }
 
+    static fs::path getLauncherPath() {
+        return getAppDataPath() / "KonamiClient";
+    }
+
     static fs::path getConfigPath() {
-        return getAppDataPath() / "KonamiClient" / "config.json";
+        return getLauncherPath() / "config.json";
     }
 
     static fs::path getCachePath() {
-        return getAppDataPath() / "KonamiClient" / "cache";
+        return getLauncherPath() / "cache";
     }
 
     static fs::path getLogsPath() {
-        return getAppDataPath() / "KonamiClient" / "logs";
+        return getLauncherPath() / "logs";
     }
 
     static fs::path getProfilesPath() {
-        return getAppDataPath() / "KonamiClient" / "profiles";
+        return getLauncherPath() / "profiles";
     }
 
     static fs::path getSkinsPath() {
-        return getAppDataPath() / "KonamiClient" / "skins";
+        return getLauncherPath() / "skins";
     }
 
     static fs::path getMinecraftPath() {

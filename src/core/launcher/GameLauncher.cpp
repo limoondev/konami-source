@@ -218,6 +218,13 @@ void GameLauncher::shutdown() {
     if (isRunning()) {
         kill();
     }
+    
+#ifndef _WIN32
+    // Join the output thread to avoid dangling threads
+    if (m_impl->outputThread.joinable()) {
+        m_impl->outputThread.join();
+    }
+#endif
 }
 
 std::future<VersionManifest> GameLauncher::fetchVersionManifest() {
@@ -396,7 +403,10 @@ std::future<bool> GameLauncher::launch(const LaunchOptions& options, ProgressCal
             m_impl->currentProcess.startTime = std::chrono::system_clock::now();
             m_impl->running = true;
             
-            // Start output reading thread
+            // Start output reading thread (joinable, joined on shutdown)
+            if (m_impl->outputThread.joinable()) {
+                m_impl->outputThread.join();
+            }
             m_impl->outputThread = std::thread([this]() {
                 int status;
                 waitpid(m_impl->processPid, &status, 0);
@@ -411,7 +421,6 @@ std::future<bool> GameLauncher::launch(const LaunchOptions& options, ProgressCal
                     m_impl->onGameExited(m_impl->currentProcess.exitCode);
                 }
             });
-            m_impl->outputThread.detach();
         }
 #endif
         
