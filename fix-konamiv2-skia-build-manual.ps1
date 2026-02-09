@@ -1,274 +1,315 @@
 <#
-  KonamiV2 - Fix MANUEL si le script principal ne marche pas
+  KonamiV2 - Fix MANUEL Skia Build
   
-  Ce script fait la meme chose MAIS avec des chemins codes en dur
-  bases sur ton log de build exact.
+  Ce script utilise les chemins EXACTS de ton log de build.
+  Zero StrictMode, zero .Count sur des non-arrays, zero risque PowerShell.
+  
+  Il fait 3 choses:
+  1. Patch config.rs dans le registre Cargo (chemin exact de ton log)
+  2. Nettoie le cache de build Skia (chemin exact de ton log)
+  3. Nettoie les args.gn corrompus
   
   Usage:
     .\fix-konamiv2-skia-build-manual.ps1
 #>
-param(
-    [string]$ProjectDir = "C:\KonamiV2"
-)
 
 $ErrorActionPreference = "Continue"
 
 Write-Host ""
-Write-Host "  ==========================================================" -ForegroundColor Magenta
-Write-Host "   KonamiV2 Skia Build Fix - MODE MANUEL" -ForegroundColor Magenta
-Write-Host "  ==========================================================" -ForegroundColor Magenta
+Write-Host "  ======================================" -ForegroundColor Cyan
+Write-Host "   Fix Skia Build - Mode Direct" -ForegroundColor Cyan
+Write-Host "  ======================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Chemins exacts depuis ton log de build
-$cargoHome = $env:CARGO_HOME
-if (-not $cargoHome) { $cargoHome = "$env:USERPROFILE\.cargo" }
+# ---------------------------------------------------------------
+# Chemins exacts tires de ton log de build
+# ---------------------------------------------------------------
 
-# Le chemin exact vu dans ton log d'erreur:
-# C:\Users\bruck\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\skia-bindings-0.78.0\build_support\skia\config.rs
+$ProjectDir = "C:\KonamiV2"
+
+# Chemin exact du config.rs depuis ton log d'erreur ligne 437:
+# C:\Users\bruck\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\skia-bindings-0.78.0\build_support\skia\config.rs:359
 $exactConfigPath = "$env:USERPROFILE\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\skia-bindings-0.78.0\build_support\skia\config.rs"
-$exactSkiaDir = "$env:USERPROFILE\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\skia-bindings-0.78.0"
+$exactSkiaDir    = "$env:USERPROFILE\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\skia-bindings-0.78.0"
 
-# Chemin du build skia dans le build tree (depuis ton log)
+# Chemin exact du build skia depuis ton log ligne 330:
+# C:/KonamiV2/build/x64/Release/cargo/build/x86_64-pc-windows-msvc/release/build/skia-bindings-5688a081a1b30eb6/out/skia
 $skiaBuildOut = "C:\KonamiV2\build\x64\Release\cargo\build\x86_64-pc-windows-msvc\release\build"
 
-# -------------------------------------------------------------------
-# ETAPE 1 : Patcher config.rs
-# -------------------------------------------------------------------
+# ---------------------------------------------------------------
+# ETAPE 1 : Trouver config.rs
+# ---------------------------------------------------------------
 
-Write-Host "  [1/3] Patch de config.rs..." -ForegroundColor Cyan
+Write-Host "  [1/3] Recherche de config.rs..." -ForegroundColor Yellow
 
-# Essayer le chemin exact d'abord, puis chercher
 $configPath = $null
 
 if (Test-Path $exactConfigPath) {
     $configPath = $exactConfigPath
-    Write-Host "    Trouve (chemin exact): $configPath" -ForegroundColor Green
+    Write-Host "    OK chemin exact: $configPath" -ForegroundColor Green
 }
 else {
-    Write-Host "    Chemin exact introuvable, recherche..." -ForegroundColor Yellow
+    Write-Host "    Chemin exact introuvable, recherche dans le registre Cargo..." -ForegroundColor Yellow
     
-    # Chercher dans tout le registre cargo
-    $registrySrc = Join-Path $cargoHome "registry\src"
-    if (Test-Path $registrySrc) {
-        $found = @(Get-ChildItem -Path $registrySrc -Recurse -Filter "config.rs" -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName -match 'skia-bindings-0\.78' -and $_.FullName -match 'build_support' })
+    $cargoRegistry = "$env:USERPROFILE\.cargo\registry\src"
+    if (Test-Path $cargoRegistry) {
+        # Chercher manuellement sans dependre de .Count
+        $searchResult = Get-ChildItem -Path $cargoRegistry -Recurse -Filter "config.rs" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match 'skia-bindings-0\.78' -and $_.FullName -match 'build_support' } |
+            Select-Object -First 1
         
-        if ($found.Count -gt 0) {
-            $configPath = $found[0].FullName
-            $exactSkiaDir = Split-Path (Split-Path (Split-Path $configPath -Parent) -Parent) -Parent
-            Write-Host "    Trouve (recherche): $configPath" -ForegroundColor Green
+        if ($null -ne $searchResult) {
+            $configPath = $searchResult.FullName
+            # Remonter de 2 niveaux: build_support/skia/config.rs -> skia-bindings-0.78.x
+            $exactSkiaDir = Split-Path (Split-Path (Split-Path $configPath)) 
+            Write-Host "    Trouve par recherche: $configPath" -ForegroundColor Green
         }
     }
 }
 
-if (-not $configPath) {
+if ($null -eq $configPath) {
     Write-Host "    ERREUR: config.rs introuvable." -ForegroundColor Red
-    Write-Host "    Verifie que tu as deja lance un build au moins une fois." -ForegroundColor Red
-    Write-Host "    Chemin attendu: $exactConfigPath" -ForegroundColor Gray
+    Write-Host "    Chemin attendu: $exactConfigPath" -ForegroundColor Red
+    Write-Host "    Lance un build d'abord pour telecharger les sources Cargo." -ForegroundColor Yellow
     exit 1
 }
 
-# Lire le fichier
+# ---------------------------------------------------------------
+# ETAPE 1b : Patcher config.rs
+# ---------------------------------------------------------------
+
+Write-Host ""
+Write-Host "  [1b/3] Patch de config.rs..." -ForegroundColor Yellow
+
 $content = [System.IO.File]::ReadAllText($configPath)
 
+# Verifier si deja patche
 if ($content.Contains("PATCHED_WOFF2")) {
-    Write-Host "    Deja patche, on passe." -ForegroundColor Yellow
+    Write-Host "    Deja patche. On continue au nettoyage." -ForegroundColor Yellow
 }
 elseif (-not $content.Contains("skia_use_freetype_woff2")) {
-    Write-Host "    Pas de reference a skia_use_freetype_woff2, rien a faire." -ForegroundColor Yellow
+    Write-Host "    Pas de skia_use_freetype_woff2 dans ce fichier. Rien a faire." -ForegroundColor Yellow
 }
 else {
     # Backup
-    $bakPath = "$configPath.original"
+    $bakPath = "$configPath.bak"
     if (-not (Test-Path $bakPath)) {
         Copy-Item $configPath $bakPath -Force
-        Write-Host "    Backup cree: $bakPath" -ForegroundColor Gray
+        Write-Host "    Backup: $bakPath" -ForegroundColor Gray
     }
     
-    # Patch ligne par ligne
-    $lines = $content -split "`r?`n"
-    $result = [System.Collections.Generic.List[string]]::new()
-    $insideFreetypeBlock = $false
-    $braceDepth = 0
-    $patchedCount = 0
+    # --- PATCH ---
+    # Le probleme: skia-bindings 0.78.0 passe l'argument GN "skia_use_freetype_woff2=false"
+    # meme quand freetype est desactive (Windows). Or Skia upstream a supprime cet argument.
+    # GN voit un argument inconnu -> marque build.ninja dirty -> boucle 100x -> crash.
+    #
+    # Fix: commenter la ligne ".arg("skia_use_freetype_woff2", ...)" 
+    # UNIQUEMENT quand elle est en dehors du bloc "if use_freetype {" 
+    # (= quand elle est toujours executee, meme si freetype est off).
     
-    for ($i = 0; $i -lt $lines.Count; $i++) {
+    $lines = $content -split "`r?`n"
+    $newLines = [System.Collections.Generic.List[string]]::new()
+    $inFreetypeBlock = $false
+    $braceCount = 0
+    $patchCount = 0
+    
+    for ($i = 0; $i -lt $lines.Length; $i++) {
         $line = $lines[$i]
         
-        # Detecter "if use_freetype {"
-        if ((-not $insideFreetypeBlock) -and ($line -match 'if\s+use_freetype\s*\{')) {
-            $insideFreetypeBlock = $true
-            $braceDepth = 0
-            foreach ($c in $line.ToCharArray()) {
-                if ($c -eq '{') { $braceDepth++ }
-                if ($c -eq '}') { $braceDepth-- }
+        # Detecter entree dans le bloc "if use_freetype {"
+        if ((-not $inFreetypeBlock) -and ($line -match 'if\s+use_freetype')) {
+            $inFreetypeBlock = $true
+            $braceCount = 0
+            foreach ($ch in $line.ToCharArray()) {
+                if ($ch -eq [char]'{') { $braceCount++ }
+                if ($ch -eq [char]'}') { $braceCount-- }
             }
-            $result.Add($line)
+            $newLines.Add($line)
             continue
         }
         
-        # Tracker la profondeur dans le bloc freetype
-        if ($insideFreetypeBlock) {
-            foreach ($c in $line.ToCharArray()) {
-                if ($c -eq '{') { $braceDepth++ }
-                if ($c -eq '}') { $braceDepth-- }
+        # Dans le bloc freetype: tracker les accolades
+        if ($inFreetypeBlock) {
+            foreach ($ch in $line.ToCharArray()) {
+                if ($ch -eq [char]'{') { $braceCount++ }
+                if ($ch -eq [char]'}') { $braceCount-- }
             }
-            if ($braceDepth -le 0) { $insideFreetypeBlock = $false }
-            $result.Add($line)
+            if ($braceCount -le 0) { $inFreetypeBlock = $false }
+            $newLines.Add($line)
             continue
         }
         
-        # HORS du bloc freetype: commenter la ligne problematique
-        if ($line -match 'skia_use_freetype_woff2' -and $line -notmatch '^\s*//') {
+        # HORS du bloc freetype: commenter skia_use_freetype_woff2
+        if (($line -match 'skia_use_freetype_woff2') -and ($line -notmatch '^\s*//')) {
             $indent = ""
             if ($line -match '^(\s+)') { $indent = $Matches[1] }
-            $result.Add("${indent}// PATCHED_WOFF2: arg GN obsolete commente")
-            $result.Add("${indent}// $($line.TrimStart())")
-            $patchedCount++
-            Write-Host "    Ligne $($i+1) patchee: $($line.Trim())" -ForegroundColor Green
+            $newLines.Add("${indent}// PATCHED_WOFF2: arg GN obsolete commente pour fix ninja dirty loop")
+            $newLines.Add("${indent}// $($line.TrimStart())")
+            $patchCount++
+            Write-Host "    Ligne $($i+1) commentee: $($line.Trim())" -ForegroundColor Green
         }
         else {
-            $result.Add($line)
+            $newLines.Add($line)
         }
     }
     
-    if ($patchedCount -gt 0) {
-        $newContent = $result -join "`n"
-        [System.IO.File]::WriteAllText($configPath, $newContent, [System.Text.UTF8Encoding]::new($false))
-        Write-Host "    $patchedCount ligne(s) patchee(s)" -ForegroundColor Green
+    if ($patchCount -gt 0) {
+        $joined = $newLines -join "`r`n"
+        [System.IO.File]::WriteAllText($configPath, $joined, [System.Text.UTF8Encoding]::new($false))
+        Write-Host "    $patchCount ligne(s) patchee(s) avec succes!" -ForegroundColor Green
     }
     else {
-        Write-Host "    Aucune ligne trouvee hors du bloc freetype" -ForegroundColor Yellow
+        Write-Host "    Aucune ligne a patcher hors du bloc freetype (deja correct)." -ForegroundColor Yellow
     }
     
-    # Checksum
-    $checksumPath = Join-Path $exactSkiaDir ".cargo-checksum.json"
-    if (Test-Path $checksumPath) {
+    # Mettre a jour le checksum Cargo pour que Cargo accepte le fichier modifie
+    $checksumFile = Join-Path $exactSkiaDir ".cargo-checksum.json"
+    if (Test-Path $checksumFile) {
         try {
-            $csContent = [System.IO.File]::ReadAllText($checksumPath)
-            $csContent = $csContent -replace '"build_support/skia/config\.rs":"[a-f0-9]+"', '"build_support/skia/config.rs":""'
-            [System.IO.File]::WriteAllText($checksumPath, $csContent, [System.Text.UTF8Encoding]::new($false))
-            Write-Host "    Checksum mis a jour" -ForegroundColor Green
+            $csText = [System.IO.File]::ReadAllText($checksumFile)
+            # Remplacer le hash SHA256 du fichier config.rs par une chaine vide
+            $csText = $csText -replace '"build_support/skia/config\.rs":"[a-f0-9]+"', '"build_support/skia/config.rs":""'
+            $csText = $csText -replace '"build_support\\skia\\config\.rs":"[a-f0-9]+"', '"build_support\\skia\\config.rs":""'
+            [System.IO.File]::WriteAllText($checksumFile, $csText, [System.Text.UTF8Encoding]::new($false))
+            Write-Host "    Checksum Cargo mis a jour." -ForegroundColor Green
         }
         catch {
-            Write-Host "    Checksum non mis a jour (non-critique): $_" -ForegroundColor Yellow
+            Write-Host "    Warning checksum (non-critique): $($_.Exception.Message)" -ForegroundColor Yellow
         }
+    }
+    else {
+        Write-Host "    Pas de .cargo-checksum.json trouve (non-critique)." -ForegroundColor Gray
     }
 }
 
-# -------------------------------------------------------------------
-# ETAPE 2 : Nettoyer les artefacts de build
-# -------------------------------------------------------------------
+# ---------------------------------------------------------------
+# ETAPE 2 : Nettoyer le cache de build Skia
+# ---------------------------------------------------------------
 
 Write-Host ""
-Write-Host "  [2/3] Nettoyage des artefacts de build..." -ForegroundColor Cyan
+Write-Host "  [2/3] Nettoyage du cache de build Skia..." -ForegroundColor Yellow
 
-$buildDir = Join-Path $ProjectDir "build"
-
-if (-not (Test-Path $buildDir)) {
-    Write-Host "    Dossier build introuvable: $buildDir" -ForegroundColor Yellow
-}
-else {
-    # Nettoyer args.gn
-    $argsFiles = @(Get-ChildItem -Path $buildDir -Recurse -Filter "args.gn" -ErrorAction SilentlyContinue)
-    foreach ($af in $argsFiles) {
-        try {
-            $afContent = [System.IO.File]::ReadAllText($af.FullName)
-            if ($afContent.Contains("skia_use_freetype_woff2")) {
-                $newLines = ($afContent -split "`r?`n") | Where-Object { $_ -notmatch 'skia_use_freetype_woff2' }
-                [System.IO.File]::WriteAllText($af.FullName, ($newLines -join "`n"), [System.Text.UTF8Encoding]::new($false))
-                Write-Host "    args.gn nettoye: $($af.FullName)" -ForegroundColor Green
-            }
-        }
-        catch { }
-    }
+# 2a. Supprimer les dossiers out/ des skia-bindings dans le build tree
+if (Test-Path $skiaBuildOut) {
+    $deletedCount = 0
     
-    # Supprimer ninja dans les dossiers skia
-    $ninjaPatterns = @("build.ninja", ".ninja_deps", ".ninja_log")
-    foreach ($pattern in $ninjaPatterns) {
-        $files = @(Get-ChildItem -Path $buildDir -Recurse -Filter $pattern -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName -match 'skia' })
-        foreach ($f in $files) {
-            try {
-                Remove-Item $f.FullName -Force -ErrorAction Stop
-                Write-Host "    Supprime: $($f.Name) dans ...\$(Split-Path (Split-Path $f.FullName -Parent) -Leaf)" -ForegroundColor Green
-            }
-            catch { }
-        }
-    }
-    
-    # Supprimer les dossiers out/skia dans le cache cargo du build
-    if (Test-Path $skiaBuildOut) {
-        $skiaBindingsDirs = @(Get-ChildItem -Path $skiaBuildOut -Directory -Filter "skia-bindings-*" -ErrorAction SilentlyContinue)
-        foreach ($sbd in $skiaBindingsDirs) {
-            $outDir = Join-Path $sbd.FullName "out"
+    Get-ChildItem -Path $skiaBuildOut -Directory -Filter "skia-bindings-*" -ErrorAction SilentlyContinue |
+        ForEach-Object {
+            $outDir = Join-Path $_.FullName "out"
             if (Test-Path $outDir) {
                 try {
-                    Remove-Item $outDir -Recurse -Force -ErrorAction Stop
-                    Write-Host "    Cache skia supprime: $($sbd.Name)\out" -ForegroundColor Green
+                    Remove-Item -Path $outDir -Recurse -Force -ErrorAction Stop
+                    Write-Host "    Supprime: $($_.Name)\out" -ForegroundColor Green
+                    $deletedCount++
                 }
                 catch {
                     Write-Host "    Impossible de supprimer: $outDir" -ForegroundColor Yellow
                 }
             }
         }
-    }
     
-    # Supprimer fingerprints
-    $fpDirs = @(Get-ChildItem -Path $buildDir -Recurse -Directory -Filter ".fingerprint" -ErrorAction SilentlyContinue)
-    foreach ($fpDir in $fpDirs) {
-        $skiaFPs = @(Get-ChildItem -Path $fpDir.FullName -Directory -Filter "skia-bindings-*" -ErrorAction SilentlyContinue)
-        foreach ($fp in $skiaFPs) {
+    Write-Host "    $deletedCount dossier(s) out/ supprime(s)" -ForegroundColor Gray
+    
+    # 2b. Supprimer les fingerprints de skia-bindings
+    $fpDir = Join-Path $skiaBuildOut ".fingerprint"
+    if (Test-Path $fpDir) {
+        Get-ChildItem -Path $fpDir -Directory -Filter "skia-bindings-*" -ErrorAction SilentlyContinue |
+            ForEach-Object {
+                try {
+                    Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction Stop
+                    Write-Host "    Fingerprint supprimee: $($_.Name)" -ForegroundColor Green
+                }
+                catch { }
+            }
+    }
+}
+else {
+    Write-Host "    Dossier de build Cargo pas trouve (normal si clean build)." -ForegroundColor Gray
+}
+
+# ---------------------------------------------------------------
+# ETAPE 3 : Nettoyer les args.gn et ninja corrompus
+# ---------------------------------------------------------------
+
+Write-Host ""
+Write-Host "  [3/3] Nettoyage des args.gn et fichiers ninja..." -ForegroundColor Yellow
+
+$buildDir = Join-Path $ProjectDir "build"
+
+if (Test-Path $buildDir) {
+    # 3a. Nettoyer args.gn contenant skia_use_freetype_woff2
+    $cleanedArgs = 0
+    Get-ChildItem -Path $buildDir -Recurse -Filter "args.gn" -ErrorAction SilentlyContinue |
+        ForEach-Object {
             try {
-                Remove-Item $fp.FullName -Recurse -Force -ErrorAction Stop
-                Write-Host "    Fingerprint: $($fp.Name)" -ForegroundColor Green
+                $afContent = [System.IO.File]::ReadAllText($_.FullName)
+                if ($afContent -match "skia_use_freetype_woff2") {
+                    $afLines = $afContent -split "`r?`n"
+                    $cleanLines = $afLines | Where-Object { $_ -notmatch "skia_use_freetype_woff2" }
+                    [System.IO.File]::WriteAllText($_.FullName, ($cleanLines -join "`n"), [System.Text.UTF8Encoding]::new($false))
+                    Write-Host "    args.gn nettoye: $($_.FullName)" -ForegroundColor Green
+                    $cleanedArgs++
+                }
             }
             catch { }
         }
-    }
-}
-
-# -------------------------------------------------------------------
-# ETAPE 3 : Verification
-# -------------------------------------------------------------------
-
-Write-Host ""
-Write-Host "  [3/3] Verification..." -ForegroundColor Cyan
-
-$verifyContent = [System.IO.File]::ReadAllText($configPath)
-
-# Compter les references non commentees
-$uncommentedRefs = 0
-$verifyLines = $verifyContent -split "`r?`n"
-foreach ($vl in $verifyLines) {
-    if ($vl -match 'skia_use_freetype_woff2' -and $vl -notmatch '^\s*//' -and $vl -notmatch 'PATCHED') {
-        # Verifier si c'est dans le bloc freetype (approximation simple)
-        $uncommentedRefs++
-    }
-}
-
-if ($verifyContent.Contains("PATCHED_WOFF2")) {
-    Write-Host "    config.rs: PATCHE" -ForegroundColor Green
+    Write-Host "    $cleanedArgs fichier(s) args.gn nettoye(s)" -ForegroundColor Gray
+    
+    # 3b. Supprimer les build.ninja / .ninja_deps / .ninja_log dans les dossiers skia
+    $ninjaDeleted = 0
+    Get-ChildItem -Path $buildDir -Recurse -ErrorAction SilentlyContinue |
+        Where-Object { ($_.Name -eq "build.ninja" -or $_.Name -eq ".ninja_deps" -or $_.Name -eq ".ninja_log") -and $_.FullName -match "skia" } |
+        ForEach-Object {
+            try {
+                Remove-Item $_.FullName -Force -ErrorAction Stop
+                Write-Host "    Supprime: $($_.Name)" -ForegroundColor Green
+                $ninjaDeleted++
+            }
+            catch { }
+        }
+    Write-Host "    $ninjaDeleted fichier(s) ninja supprime(s)" -ForegroundColor Gray
 }
 else {
-    Write-Host "    config.rs: PAS PATCHE (anomalie)" -ForegroundColor Red
+    Write-Host "    Dossier build introuvable: $buildDir" -ForegroundColor Yellow
 }
 
-# -------------------------------------------------------------------
-# RESUME
-# -------------------------------------------------------------------
+# ---------------------------------------------------------------
+# VERIFICATION FINALE
+# ---------------------------------------------------------------
 
 Write-Host ""
-Write-Host "  ==========================================================" -ForegroundColor Magenta
-Write-Host "   FIX APPLIQUE" -ForegroundColor Green
+Write-Host "  Verification finale..." -ForegroundColor Cyan
+
+$verifyContent = [System.IO.File]::ReadAllText($configPath)
+if ($verifyContent.Contains("PATCHED_WOFF2")) {
+    Write-Host "    config.rs est PATCHE correctement." -ForegroundColor Green
+}
+else {
+    Write-Host "    ATTENTION: config.rs n'est PAS patche." -ForegroundColor Red
+}
+
+# ---------------------------------------------------------------
+# RESUME
+# ---------------------------------------------------------------
+
 Write-Host ""
-Write-Host "   Maintenant rebuild:" -ForegroundColor White
-Write-Host "   cd $ProjectDir\build" -ForegroundColor Yellow
-Write-Host "   cmake --build . --config Release" -ForegroundColor Yellow
+Write-Host "  ======================================" -ForegroundColor Cyan
+Write-Host "   FIX TERMINE" -ForegroundColor Green
+Write-Host "  ======================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "   Si erreur 'source verification' de Cargo:" -ForegroundColor Gray
-Write-Host "   Le checksum a ete mis a jour, mais si Cargo refuse:" -ForegroundColor Gray
-Write-Host '   $env:CARGO_NET_OFFLINE="true"' -ForegroundColor Yellow
-Write-Host "   cmake --build . --config Release" -ForegroundColor Yellow
-Write-Host "  ==========================================================" -ForegroundColor Magenta
+Write-Host "  Maintenant lance:" -ForegroundColor White
+Write-Host "    cd C:\KonamiV2\build" -ForegroundColor Yellow
+Write-Host "    cmake --build . --config Release" -ForegroundColor Yellow
+Write-Host ""
+Write-Host "  Si Cargo refuse le fichier modifie (source verification):" -ForegroundColor Gray
+Write-Host '    $env:CARGO_NET_OFFLINE="true"' -ForegroundColor Yellow
+Write-Host "    cmake --build . --config Release" -ForegroundColor Yellow
+Write-Host ""
+Write-Host "  Si ca echoue encore, clean rebuild complet:" -ForegroundColor Gray
+Write-Host "    Remove-Item -Recurse -Force C:\KonamiV2\build" -ForegroundColor Yellow
+Write-Host "    cd C:\KonamiV2" -ForegroundColor Yellow
+Write-Host "    cmake -B build -S ." -ForegroundColor Yellow
+Write-Host "    .\fix-konamiv2-skia-build-manual.ps1" -ForegroundColor Yellow
+Write-Host "    cd build" -ForegroundColor Yellow
+Write-Host "    cmake --build . --config Release" -ForegroundColor Yellow
 Write-Host ""
